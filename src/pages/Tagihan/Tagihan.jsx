@@ -184,8 +184,8 @@ const Tagihan = () => {
                                     <p className="font-bold text-gray-900">{formatRupiah(billing.total_tagihan)}</p>
                                     <span
                                         className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${isPaid
-                                                ? 'bg-green-100 text-green-700'
-                                                : 'bg-amber-100 text-amber-700'
+                                            ? 'bg-green-100 text-green-700'
+                                            : 'bg-amber-100 text-amber-700'
                                             }`}
                                     >
                                         {billing.status_tagihan}
