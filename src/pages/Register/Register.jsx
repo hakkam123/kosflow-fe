@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { User, Lock, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuthStore } from '../../context';
 
-const Login = () => {
+const Register = () => {
     const navigate = useNavigate();
-    const { login, isLoading, error, clearError } = useAuthStore();
+    const { register, isLoading, error, clearError } = useAuthStore();
     const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
 
@@ -14,9 +15,9 @@ const Login = () => {
         e.preventDefault();
         clearError();
 
-        const result = await login({ email: username, password });
+        const result = await register({ username, email, password });
         if (result.success) {
-            navigate('/');
+            navigate('/verify-email', { state: { email } });
         }
     };
 
@@ -41,7 +42,7 @@ const Login = () => {
                         </div>
                     )}
 
-                    {/* Login Form */}
+                    {/* Register Form */}
                     <form onSubmit={handleSubmit} className="space-y-4">
                         {/* Username Field */}
                         <div className="relative">
@@ -53,6 +54,21 @@ const Login = () => {
                                 placeholder="Masukan Username Anda..."
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
+                                required
+                                className="block w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-[#059669] transition-all"
+                            />
+                        </div>
+
+                        {/* Email Field */}
+                        <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <Mail className="h-5 w-5 text-gray-400" />
+                            </div>
+                            <input
+                                type="email"
+                                placeholder="Masukan Email Anda..."
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 required
                                 className="block w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-[#059669] transition-all"
                             />
@@ -95,22 +111,27 @@ const Login = () => {
                                         </svg>
                                         Memuat...
                                     </span>
-                                ) : 'Masuk'}
+                                ) : 'Buat Akun'}
                             </button>
                         </div>
                     </form>
 
-                    {/* Footer Link */}
-                    <p className="text-center text-sm text-gray-500 mt-6">
-                        Belum punya akun?{' '}
-                        <Link to="/register" className="font-semibold text-gray-700 hover:text-[#059669] transition-colors">
-                            Buat Sekarang!
-                        </Link>
-                    </p>
+                    {/* Footer Links */}
+                    <div className="text-center mt-6 space-y-1">
+                        <p className="text-sm text-gray-500">
+                            Kode verifikasi akan dikirim ke email Anda
+                        </p>
+                        <p className="text-sm text-gray-500">
+                            Sudah punya akun?{' '}
+                            <Link to="/login" className="font-semibold text-gray-700 hover:text-[#059669] transition-colors">
+                                Masuk Sekarang!
+                            </Link>
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
     );
 };
 
-export default Login;
+export default Register;

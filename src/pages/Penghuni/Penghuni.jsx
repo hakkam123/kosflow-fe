@@ -1,21 +1,41 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Search, Phone, Calendar } from 'lucide-react';
-import { Button, Card, Input, Modal } from '../../components';
+import { Plus, Phone, Mail, User } from 'lucide-react';
 import { useTenantStore, useRoomStore } from '../../context';
-import { formatDateShort } from '../../utils/formatDate';
-import { ROOM_STATUS } from '../../config/constants';
+import { useToast } from '@/components/ui/toast';
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const Penghuni = () => {
+    const { toast } = useToast();
     const { tenants, fetchTenants, addTenant, updateTenant, deleteTenant, isLoading } = useTenantStore();
     const { rooms, fetchRooms } = useRoomStore();
-    const [searchTerm, setSearchTerm] = useState('');
-    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingTenant, setEditingTenant] = useState(null);
-    const [formData, setFormData] = useState({
+
+    const [addForm, setAddForm] = useState({
         nama_penghuni: '',
         nomor_kontak: '',
-        tanggal_masuk: '',
+        email: '',
+        no_ktp: '',
         kamar_id: '',
+        tanggal_masuk: new Date().toISOString().split('T')[0],
+    });
+
+    const [editForm, setEditForm] = useState({
+        nama_penghuni: '',
+        nomor_kontak: '',
+        email: '',
+        no_ktp: '',
     });
 
     useEffect(() => {
@@ -23,201 +43,292 @@ const Penghuni = () => {
         fetchRooms();
     }, []);
 
-    const availableRooms = rooms.filter((r) => r.status_kamar === ROOM_STATUS.AVAILABLE);
+    const getRoomById = (id) => rooms.find((r) => r.id === id);
 
-    const filteredTenants = tenants.filter((tenant) =>
-        tenant.nama_penghuni.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    const getRoomByTenantId = (kamarId) => {
-        return rooms.find((r) => r.id === kamarId);
+    const handleOpenAddModal = () => {
+        setAddForm({
+            nama_penghuni: '',
+            nomor_kontak: '',
+            email: '',
+            no_ktp: '',
+            kamar_id: '',
+            tanggal_masuk: new Date().toISOString().split('T')[0],
+        });
+        setIsAddModalOpen(true);
     };
 
-    const handleOpenModal = (tenant = null) => {
-        if (tenant) {
-            setEditingTenant(tenant);
-            setFormData({
-                nama_penghuni: tenant.nama_penghuni,
-                nomor_kontak: tenant.nomor_kontak,
-                tanggal_masuk: tenant.tanggal_masuk,
-                kamar_id: tenant.kamar_id?.toString() || '',
-            });
-        } else {
-            setEditingTenant(null);
-            setFormData({ nama_penghuni: '', nomor_kontak: '', tanggal_masuk: '', kamar_id: '' });
-        }
-        setIsModalOpen(true);
+    const handleOpenEditModal = (tenant) => {
+        setEditingTenant(tenant);
+        setEditForm({
+            nama_penghuni: tenant.nama_penghuni,
+            nomor_kontak: tenant.nomor_kontak,
+            email: tenant.email || '',
+            no_ktp: tenant.no_ktp || '',
+        });
+        setIsEditModalOpen(true);
     };
 
-    const handleCloseModal = () => {
-        setIsModalOpen(false);
-        setEditingTenant(null);
-        setFormData({ nama_penghuni: '', nomor_kontak: '', tanggal_masuk: '', kamar_id: '' });
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleAddTenant = async () => {
         const data = {
-            ...formData,
-            kamar_id: parseInt(formData.kamar_id),
+            ...addForm,
+            kamar_id: parseInt(addForm.kamar_id),
         };
 
-        if (editingTenant) {
-            await updateTenant(editingTenant.id, data);
-        } else {
-            await addTenant(data);
-        }
-        handleCloseModal();
+        await addTenant(data);
+        toast.success({
+            title: 'Berhasil!',
+            description: 'Penghuni baru telah ditambahkan',
+        });
+        setIsAddModalOpen(false);
     };
 
-    const handleDelete = async (id) => {
-        if (window.confirm('Apakah Anda yakin ingin menghapus penghuni ini?')) {
+    const handleEditTenant = async () => {
+        await updateTenant(editingTenant.id, editForm);
+        toast.success({
+            title: 'Berhasil!',
+            description: 'Data penghuni telah diperbarui',
+        });
+        setIsEditModalOpen(false);
+    };
+
+    const handleDeleteTenant = async (id, name) => {
+        if (window.confirm(`Apakah Anda yakin ingin menghapus ${name}?`)) {
             await deleteTenant(id);
+            toast.success({
+                title: 'Berhasil!',
+                description: 'Penghuni telah dihapus',
+            });
         }
     };
 
     return (
-        <div className="space-y-6">
+        <div className="p-6 bg-gray-50 min-h-screen">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center justify-between mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Penghuni</h1>
-                    <p className="text-gray-500">Kelola data penghuni kos</p>
+                    <p className="text-gray-500 text-sm mt-1">Kelola data penghuni kos</p>
                 </div>
-                <Button icon={Plus} onClick={() => handleOpenModal()}>
+                <button
+                    onClick={handleOpenAddModal}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-[#059669] hover:bg-[#047857] text-white rounded-lg text-sm font-medium transition-all"
+                >
+                    <Plus className="h-4 w-4" />
                     Tambah Penghuni
-                </Button>
+                </button>
             </div>
 
-            {/* Search */}
-            <div className="max-w-md">
-                <Input
-                    placeholder="Cari penghuni..."
-                    icon={Search}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
-            </div>
-
-            {/* Tenant List */}
+            {/* Tenant Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredTenants.map((tenant) => {
-                    const room = getRoomByTenantId(tenant.kamar_id);
+                {tenants.map((tenant) => {
+                    const room = getRoomById(tenant.kamar_id);
 
                     return (
-                        <Card key={tenant.id}>
-                            <div className="flex items-start gap-4">
-                                <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center text-primary-600 font-semibold text-lg flex-shrink-0">
-                                    {tenant.nama_penghuni.charAt(0)}
+                        <div key={tenant.id} className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+                            {/* Header with Icon and Name */}
+                            <div className="flex items-start gap-3 mb-4">
+                                <div className="w-12 h-12 rounded-lg bg-[#059669]/10 flex items-center justify-center flex-shrink-0">
+                                    <User className="h-6 w-6 text-[#059669]" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <h3 className="font-semibold text-gray-900 truncate">{tenant.nama_penghuni}</h3>
-                                    {room && (
-                                        <p className="text-sm text-primary-600 font-medium">{room.nomor_kamar}</p>
-                                    )}
+                                    <p className="text-sm text-[#059669] font-medium">{room?.nomor_kamar || 'Kamar 01'}</p>
                                 </div>
                             </div>
 
-                            <div className="mt-4 space-y-2">
-                                <div className="flex items-center gap-2 text-sm text-gray-500">
-                                    <Phone className="h-4 w-4" />
-                                    <span>{tenant.nomor_kontak}</span>
+                            {/* Contact Info */}
+                            <div className="space-y-2 mb-4">
+                                <div className="flex items-center gap-2 text-sm text-gray-600">
+                                    <Phone className="h-4 w-4 flex-shrink-0" />
+                                    <span className="truncate">{tenant.nomor_kontak}</span>
                                 </div>
-                                <div className="flex items-center gap-2 text-sm text-gray-500">
-                                    <Calendar className="h-4 w-4" />
-                                    <span>Masuk: {formatDateShort(tenant.tanggal_masuk)}</span>
+                                <div className="flex items-center gap-2 text-sm text-gray-600">
+                                    <Mail className="h-4 w-4 flex-shrink-0" />
+                                    <span className="truncate">{tenant.email || 'bilalabdi@gmail.com'}</span>
                                 </div>
                             </div>
 
-                            <div className="flex gap-2 pt-4 mt-4 border-t border-gray-100">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    icon={Edit2}
-                                    onClick={() => handleOpenModal(tenant)}
-                                    className="flex-1"
+                            {/* Date */}
+                            <p className="text-xs text-gray-400 mb-4">
+                                Masuk: {new Date(tenant.tanggal_masuk).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                            </p>
+
+                            {/* Actions */}
+                            <div className="flex gap-2 pt-4 border-t border-gray-100">
+                                <button
+                                    onClick={() => handleOpenEditModal(tenant)}
+                                    className="flex-1 px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium transition-all"
                                 >
                                     Edit
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    icon={Trash2}
-                                    onClick={() => handleDelete(tenant.id)}
-                                    className="text-danger hover:bg-red-50"
-                                />
+                                </button>
+                                <button
+                                    onClick={() => handleDeleteTenant(tenant.id, tenant.nama_penghuni)}
+                                    className="px-4 py-2 bg-white border border-gray-200 hover:bg-red-50 text-red-600 rounded-lg text-sm font-medium transition-all"
+                                >
+                                    Hapus
+                                </button>
                             </div>
-                        </Card>
+                        </div>
                     );
                 })}
             </div>
 
-            {filteredTenants.length === 0 && (
+            {tenants.length === 0 && (
                 <div className="text-center py-12">
                     <p className="text-gray-500">Tidak ada penghuni ditemukan</p>
                 </div>
             )}
 
-            {/* Add/Edit Modal */}
-            <Modal
-                isOpen={isModalOpen}
-                onClose={handleCloseModal}
-                title={editingTenant ? 'Edit Penghuni' : 'Tambah Penghuni Baru'}
-            >
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <Input
-                        label="Nama Penghuni"
-                        placeholder="Nama lengkap penghuni"
-                        value={formData.nama_penghuni}
-                        onChange={(e) => setFormData({ ...formData, nama_penghuni: e.target.value })}
-                        required
-                    />
-                    <Input
-                        label="Nomor Kontak"
-                        placeholder="08xxxxxxxxxx"
-                        value={formData.nomor_kontak}
-                        onChange={(e) => setFormData({ ...formData, nomor_kontak: e.target.value })}
-                        required
-                    />
-                    <Input
-                        label="Tanggal Masuk"
-                        type="date"
-                        value={formData.tanggal_masuk}
-                        onChange={(e) => setFormData({ ...formData, tanggal_masuk: e.target.value })}
-                        required
-                    />
-                    <div className="space-y-1.5">
-                        <label className="block text-sm font-medium text-gray-700">Kamar</label>
-                        <select
-                            value={formData.kamar_id}
-                            onChange={(e) => setFormData({ ...formData, kamar_id: e.target.value })}
-                            className="block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                            required
-                        >
-                            <option value="">Pilih Kamar</option>
-                            {/* Show current room if editing */}
-                            {editingTenant && editingTenant.kamar_id && (
-                                <option value={editingTenant.kamar_id}>
-                                    {rooms.find((r) => r.id === editingTenant.kamar_id)?.nomor_kamar} (Saat ini)
-                                </option>
-                            )}
-                            {availableRooms.map((room) => (
-                                <option key={room.id} value={room.id}>
-                                    {room.nomor_kamar} - {room.tipe_kamar}
-                                </option>
-                            ))}
-                        </select>
+            {/* Add Tenant Modal */}
+            <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Tambah Penghuni</DialogTitle>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+                        <div>
+                            <Label htmlFor="nama">Nama Lengkap</Label>
+                            <Input
+                                id="nama"
+                                placeholder="Masukkan nama lengkap"
+                                value={addForm.nama_penghuni}
+                                onChange={(e) => setAddForm({ ...addForm, nama_penghuni: e.target.value })}
+                                className="mt-2"
+                            />
+                        </div>
+
+                        <div>
+                            <Label htmlFor="whatsapp">No. WhatsApp*</Label>
+                            <Input
+                                id="whatsapp"
+                                placeholder="08xxxxxxxxxx"
+                                value={addForm.nomor_kontak}
+                                onChange={(e) => setAddForm({ ...addForm, nomor_kontak: e.target.value })}
+                                className="mt-2"
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <Label htmlFor="email">Email</Label>
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    placeholder="email@example.com"
+                                    value={addForm.email}
+                                    onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
+                                    className="mt-2"
+                                />
+                            </div>
+
+                            <div>
+                                <Label htmlFor="ktp">No. KTP</Label>
+                                <Input
+                                    id="ktp"
+                                    placeholder="16 digit"
+                                    value={addForm.no_ktp}
+                                    onChange={(e) => setAddForm({ ...addForm, no_ktp: e.target.value })}
+                                    className="mt-2"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <Label htmlFor="kamar">Kamar</Label>
+                            <select
+                                id="kamar"
+                                value={addForm.kamar_id}
+                                onChange={(e) => setAddForm({ ...addForm, kamar_id: e.target.value })}
+                                className="mt-2 block w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-[#059669] transition-all"
+                            >
+                                <option value="">Pilih Kamar</option>
+                                {rooms.filter(r => r.status_kamar === 'Tersedia').map((room) => (
+                                    <option key={room.id} value={room.id}>
+                                        {room.nomor_kamar}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
-                    <div className="flex gap-3 pt-4">
-                        <Button type="button" variant="outline" onClick={handleCloseModal} className="flex-1">
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
                             Batal
                         </Button>
-                        <Button type="submit" loading={isLoading} className="flex-1">
-                            {editingTenant ? 'Simpan' : 'Tambah'}
+                        <Button onClick={handleAddTenant} className="bg-[#059669] hover:bg-[#047857]">
+                            Tambah
                         </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Edit Tenant Modal */}
+            <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Edit Penghuni</DialogTitle>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+                        <div>
+                            <Label htmlFor="editNama">Nama Lengkap</Label>
+                            <Input
+                                id="editNama"
+                                placeholder="Masukkan nama lengkap"
+                                value={editForm.nama_penghuni}
+                                onChange={(e) => setEditForm({ ...editForm, nama_penghuni: e.target.value })}
+                                className="mt-2"
+                            />
+                        </div>
+
+                        <div>
+                            <Label htmlFor="editWhatsapp">No. WhatsApp*</Label>
+                            <Input
+                                id="editWhatsapp"
+                                placeholder="08xxxxxxxxxx"
+                                value={editForm.nomor_kontak}
+                                onChange={(e) => setEditForm({ ...editForm, nomor_kontak: e.target.value })}
+                                className="mt-2"
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <Label htmlFor="editEmail">Email</Label>
+                                <Input
+                                    id="editEmail"
+                                    type="email"
+                                    placeholder="email@example.com"
+                                    value={editForm.email}
+                                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                                    className="mt-2"
+                                />
+                            </div>
+
+                            <div>
+                                <Label htmlFor="editKtp">No. KTP</Label>
+                                <Input
+                                    id="editKtp"
+                                    placeholder="16 digit"
+                                    value={editForm.no_ktp}
+                                    onChange={(e) => setEditForm({ ...editForm, no_ktp: e.target.value })}
+                                    className="mt-2"
+                                />
+                            </div>
+                        </div>
                     </div>
-                </form>
-            </Modal>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
+                            Batal
+                        </Button>
+                        <Button onClick={handleEditTenant} className="bg-[#059669] hover:bg-[#047857]">
+                            Simpan
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };
