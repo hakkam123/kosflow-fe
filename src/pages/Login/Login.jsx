@@ -6,7 +6,7 @@ import { useAuthStore } from '../../context';
 const Login = () => {
     const navigate = useNavigate();
     const { login, isLoading, error, clearError } = useAuthStore();
-    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
 
@@ -14,7 +14,7 @@ const Login = () => {
         e.preventDefault();
         clearError();
 
-        const result = await login({ email: username, password });
+        const result = await login({ email, password });
         if (result.success) {
             navigate('/');
         }
@@ -49,10 +49,10 @@ const Login = () => {
                                 <User className="h-5 w-5 text-gray-400" />
                             </div>
                             <input
-                                type="text"
-                                placeholder="Masukan Username Anda..."
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
+                                type="email"
+                                placeholder="Masukan Email Anda..."
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 required
                                 className="block w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-[#059669] transition-all"
                             />
