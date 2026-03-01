@@ -5,6 +5,7 @@ import {
     DoorOpen,
     Users,
     Receipt,
+    Bell,
     Settings,
     LogOut,
     ChevronLeft,
@@ -18,6 +19,7 @@ const menuItems = [
     { path: '/kamar', label: 'Kamar', icon: DoorOpen },
     { path: '/penghuni', label: 'Penghuni', icon: Users },
     { path: '/tagihan', label: 'Tagihan', icon: Receipt },
+    { path: '/reminder', label: 'Reminder', icon: Bell },
     { path: '/pengaturan', label: 'Pengaturan', icon: Settings },
 ];
 

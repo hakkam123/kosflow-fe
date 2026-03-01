@@ -14,6 +14,7 @@ import Kamar from './pages/Kamar';
 import Penghuni from './pages/Penghuni';
 import Tagihan from './pages/Tagihan';
 import Pengaturan from './pages/Pengaturan';
+import Reminder from './pages/Reminder';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -81,6 +82,7 @@ function App() {
             <Route path="kamar" element={<Kamar />} />
             <Route path="penghuni" element={<Penghuni />} />
             <Route path="tagihan" element={<Tagihan />} />
+            <Route path="reminder" element={<Reminder />} />
             <Route path="pengaturan" element={<Pengaturan />} />
           </Route>
 

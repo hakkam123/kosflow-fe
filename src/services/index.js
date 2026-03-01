@@ -3,3 +3,4 @@ export { default as authService } from './authService';
 export { default as roomService } from './roomService';
 export { default as tenantService } from './tenantService';
 export { default as billingService } from './billingService';
+export { default as reminderService } from './reminderService';

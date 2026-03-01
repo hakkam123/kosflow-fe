@@ -1,30 +1,20 @@
 import { create } from 'zustand';
-import { ROOM_STATUS } from '../config/constants';
-
-// Mock data for development
-const mockRooms = [
-    { id: 1, nomor_kamar: 'Kamar 01', tipe_kamar: 'Standard', harga_per_bulan: 800000, status_kamar: ROOM_STATUS.OCCUPIED },
-    { id: 2, nomor_kamar: 'Kamar 02', tipe_kamar: 'Standard', harga_per_bulan: 800000, status_kamar: ROOM_STATUS.AVAILABLE },
-    { id: 3, nomor_kamar: 'Kamar 03', tipe_kamar: 'Deluxe', harga_per_bulan: 1200000, status_kamar: ROOM_STATUS.AVAILABLE },
-    { id: 4, nomor_kamar: 'Kamar 04', tipe_kamar: 'Deluxe', harga_per_bulan: 1200000, status_kamar: ROOM_STATUS.AVAILABLE },
-    { id: 5, nomor_kamar: 'Kamar 05', tipe_kamar: 'VIP', harga_per_bulan: 1500000, status_kamar: ROOM_STATUS.AVAILABLE },
-];
+import roomService from '../services/roomService';
 
 export const useRoomStore = create((set, get) => ({
-    rooms: mockRooms,
+    rooms: [],
     isLoading: false,
     error: null,
 
-    // Fetch all rooms
+    // Fetch all rooms from backend
     fetchRooms: async () => {
         set({ isLoading: true, error: null });
         try {
-            // TODO: Replace with actual API call
-            // const response = await roomService.getAll();
-            await new Promise(resolve => setTimeout(resolve, 500));
-            set({ rooms: mockRooms, isLoading: false });
+            const response = await roomService.getAll();
+            set({ rooms: response.data, isLoading: false });
         } catch (error) {
-            set({ error: error.message, isLoading: false });
+            const message = error.response?.data?.message || 'Gagal memuat data kamar';
+            set({ error: message, isLoading: false });
         }
     },
 
@@ -32,19 +22,14 @@ export const useRoomStore = create((set, get) => ({
     addRoom: async (roomData) => {
         set({ isLoading: true, error: null });
         try {
-            const newRoom = {
-                ...roomData,
-                id: Date.now(),
-                status_kamar: ROOM_STATUS.AVAILABLE,
-            };
-            set((state) => ({
-                rooms: [...state.rooms, newRoom],
-                isLoading: false,
-            }));
-            return { success: true, data: newRoom };
+            const response = await roomService.create(roomData);
+            // Re-fetch to get consistent data with tenant includes
+            await get().fetchRooms();
+            return { success: true, data: response.data };
         } catch (error) {
-            set({ error: error.message, isLoading: false });
-            return { success: false, error: error.message };
+            const message = error.response?.data?.message || 'Gagal menambah kamar';
+            set({ error: message, isLoading: false });
+            return { success: false, error: message };
         }
     },
 
@@ -52,16 +37,13 @@ export const useRoomStore = create((set, get) => ({
     updateRoom: async (id, roomData) => {
         set({ isLoading: true, error: null });
         try {
-            set((state) => ({
-                rooms: state.rooms.map((room) =>
-                    room.id === id ? { ...room, ...roomData } : room
-                ),
-                isLoading: false,
-            }));
+            await roomService.update(id, roomData);
+            await get().fetchRooms();
             return { success: true };
         } catch (error) {
-            set({ error: error.message, isLoading: false });
-            return { success: false, error: error.message };
+            const message = error.response?.data?.message || 'Gagal memperbarui kamar';
+            set({ error: message, isLoading: false });
+            return { success: false, error: message };
         }
     },
 
@@ -69,28 +51,18 @@ export const useRoomStore = create((set, get) => ({
     deleteRoom: async (id) => {
         set({ isLoading: true, error: null });
         try {
-            set((state) => ({
-                rooms: state.rooms.filter((room) => room.id !== id),
-                isLoading: false,
-            }));
+            await roomService.delete(id);
+            await get().fetchRooms();
             return { success: true };
         } catch (error) {
-            set({ error: error.message, isLoading: false });
-            return { success: false, error: error.message };
+            const message = error.response?.data?.message || 'Gagal menghapus kamar';
+            set({ error: message, isLoading: false });
+            return { success: false, error: message };
         }
-    },
-
-    // Update room status (called when tenant is linked/unlinked)
-    updateRoomStatus: (roomId, status) => {
-        set((state) => ({
-            rooms: state.rooms.map((room) =>
-                room.id === roomId ? { ...room, status_kamar: status } : room
-            ),
-        }));
     },
 
     // Computed values
     getTotalRooms: () => get().rooms.length,
-    getAvailableRooms: () => get().rooms.filter((r) => r.status_kamar === ROOM_STATUS.AVAILABLE),
-    getOccupiedRooms: () => get().rooms.filter((r) => r.status_kamar === ROOM_STATUS.OCCUPIED),
+    getAvailableRooms: () => get().rooms.filter((r) => r.status_kamar === 'Kosong'),
+    getOccupiedRooms: () => get().rooms.filter((r) => r.status_kamar === 'Terisi'),
 }));

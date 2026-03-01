@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Phone, Mail, User } from 'lucide-react';
+import { Plus, Phone, Mail, User, MessageCircle } from 'lucide-react';
 import { useTenantStore, useRoomStore } from '../../context';
 import { useToast } from '@/components/ui/toast';
 import {
@@ -29,6 +29,7 @@ const Penghuni = () => {
         no_ktp: '',
         kamar_id: '',
         tanggal_masuk: new Date().toISOString().split('T')[0],
+        telegram_chat_id: '',
     });
 
     const [editForm, setEditForm] = useState({
@@ -36,6 +37,8 @@ const Penghuni = () => {
         nomor_kontak: '',
         email: '',
         no_ktp: '',
+        kamar_id: '',
+        telegram_chat_id: '',
     });
 
     useEffect(() => {
@@ -53,6 +56,7 @@ const Penghuni = () => {
             no_ktp: '',
             kamar_id: '',
             tanggal_masuk: new Date().toISOString().split('T')[0],
+            telegram_chat_id: '',
         });
         setIsAddModalOpen(true);
     };
@@ -64,6 +68,8 @@ const Penghuni = () => {
             nomor_kontak: tenant.nomor_kontak,
             email: tenant.email || '',
             no_ktp: tenant.no_ktp || '',
+            kamar_id: tenant.kamar_id ? tenant.kamar_id.toString() : '',
+            telegram_chat_id: tenant.telegram_chat_id || '',
         });
         setIsEditModalOpen(true);
     };
@@ -83,7 +89,11 @@ const Penghuni = () => {
     };
 
     const handleEditTenant = async () => {
-        await updateTenant(editingTenant.id, editForm);
+        const data = {
+            ...editForm,
+            kamar_id: editForm.kamar_id ? parseInt(editForm.kamar_id) : null,
+        };
+        await updateTenant(editingTenant.id, data);
         toast.success({
             title: 'Berhasil!',
             description: 'Data penghuni telah diperbarui',
@@ -121,7 +131,7 @@ const Penghuni = () => {
             {/* Tenant Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {tenants.map((tenant) => {
-                    const room = getRoomById(tenant.kamar_id);
+                    const room = tenant.room || getRoomById(tenant.kamar_id);
 
                     return (
                         <div key={tenant.id} className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
@@ -132,7 +142,7 @@ const Penghuni = () => {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <h3 className="font-semibold text-gray-900 truncate">{tenant.nama_penghuni}</h3>
-                                    <p className="text-sm text-[#059669] font-medium">{room?.nomor_kamar || 'Kamar 01'}</p>
+                                    <p className="text-sm text-[#059669] font-medium">{room?.nomor_kamar || 'Belum ada kamar'}</p>
                                 </div>
                             </div>
 
@@ -144,7 +154,15 @@ const Penghuni = () => {
                                 </div>
                                 <div className="flex items-center gap-2 text-sm text-gray-600">
                                     <Mail className="h-4 w-4 flex-shrink-0" />
-                                    <span className="truncate">{tenant.email || 'bilalabdi@gmail.com'}</span>
+                                    <span className="truncate">{tenant.email || '-'}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-sm">
+                                    <MessageCircle className="h-4 w-4 flex-shrink-0" />
+                                    {tenant.telegram_chat_id ? (
+                                        <span className="text-[#059669] font-medium">Telegram terhubung</span>
+                                    ) : (
+                                        <span className="text-gray-400">Telegram belum terhubung</span>
+                                    )}
                                 </div>
                             </div>
 
@@ -243,12 +261,24 @@ const Penghuni = () => {
                                 className="mt-2 block w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-[#059669] transition-all"
                             >
                                 <option value="">Pilih Kamar</option>
-                                {rooms.filter(r => r.status_kamar === 'Tersedia').map((room) => (
+                                {rooms.filter(r => r.status_kamar === 'Kosong').map((room) => (
                                     <option key={room.id} value={room.id}>
-                                        {room.nomor_kamar}
+                                        {room.nomor_kamar} — {room.tipe_kamar}
                                     </option>
                                 ))}
                             </select>
+                        </div>
+
+                        <div>
+                            <Label htmlFor="telegram">Telegram Chat ID</Label>
+                            <Input
+                                id="telegram"
+                                placeholder="Dapatkan dari bot Telegram dengan /start"
+                                value={addForm.telegram_chat_id}
+                                onChange={(e) => setAddForm({ ...addForm, telegram_chat_id: e.target.value })}
+                                className="mt-2"
+                            />
+                            <p className="text-xs text-gray-400 mt-1">Penghuni harus kirim /start ke bot Telegram untuk mendapatkan Chat ID</p>
                         </div>
                     </div>
 
@@ -316,6 +346,37 @@ const Penghuni = () => {
                                     className="mt-2"
                                 />
                             </div>
+                        </div>
+
+                        <div>
+                            <Label htmlFor="editKamar">Kamar</Label>
+                            <select
+                                id="editKamar"
+                                value={editForm.kamar_id}
+                                onChange={(e) => setEditForm({ ...editForm, kamar_id: e.target.value })}
+                                className="mt-2 block w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-[#059669] transition-all"
+                            >
+                                <option value="">Tanpa Kamar</option>
+                                {rooms
+                                    .filter(r => r.status_kamar === 'Kosong' || (editingTenant && r.id === editingTenant.kamar_id))
+                                    .map((room) => (
+                                        <option key={room.id} value={room.id}>
+                                            {room.nomor_kamar} — {room.tipe_kamar}
+                                        </option>
+                                    ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <Label htmlFor="editTelegram">Telegram Chat ID</Label>
+                            <Input
+                                id="editTelegram"
+                                placeholder="Dapatkan dari bot Telegram dengan /start"
+                                value={editForm.telegram_chat_id}
+                                onChange={(e) => setEditForm({ ...editForm, telegram_chat_id: e.target.value })}
+                                className="mt-2"
+                            />
+                            <p className="text-xs text-gray-400 mt-1">Penghuni harus kirim /start ke bot Telegram untuk mendapatkan Chat ID</p>
                         </div>
                     </div>
 

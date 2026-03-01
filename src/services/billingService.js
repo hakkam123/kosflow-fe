@@ -13,9 +13,15 @@ const billingService = {
         return response.data;
     },
 
-    // Create new billing (generate invoice)
+    // Create new billing (manual)
     create: async (billingData) => {
         const response = await api.post('/tagihan', billingData);
+        return response.data;
+    },
+
+    // Generate billings for all active tenants
+    generate: async (data) => {
+        const response = await api.post('/tagihan/generate', data);
         return response.data;
     },
 
@@ -37,21 +43,15 @@ const billingService = {
         return response.data;
     },
 
-    // Record payment
-    recordPayment: async (paymentData) => {
-        const response = await api.post('/pembayaran', paymentData);
+    // Create Midtrans payment link
+    createPayment: async (billingId) => {
+        const response = await api.post(`/tagihan/${billingId}/pay`);
         return response.data;
     },
 
-    // Get all payments
-    getAllPayments: async () => {
-        const response = await api.get('/pembayaran');
-        return response.data;
-    },
-
-    // Get payments by billing ID
-    getPaymentsByBillingId: async (billingId) => {
-        const response = await api.get(`/pembayaran/tagihan/${billingId}`);
+    // Check & mark overdue billings
+    checkOverdue: async () => {
+        const response = await api.post('/tagihan/check-overdue');
         return response.data;
     },
 };

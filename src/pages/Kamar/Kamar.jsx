@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Home } from 'lucide-react';
-import { useRoomStore, useTenantStore } from '../../context';
+import { useRoomStore } from '../../context';
 import { useToast } from '@/components/ui/toast';
 import {
     Dialog,
@@ -17,7 +17,6 @@ import { formatRupiah } from '../../utils/formatRupiah';
 const Kamar = () => {
     const { toast } = useToast();
     const { rooms, fetchRooms, addRoom, updateRoom, deleteRoom, isLoading } = useRoomStore();
-    const { tenants } = useTenantStore();
 
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -38,10 +37,6 @@ const Kamar = () => {
     useEffect(() => {
         fetchRooms();
     }, []);
-
-    const getTenantByRoomId = (roomId) => {
-        return tenants.find((t) => t.kamar_id === roomId);
-    };
 
     const handleOpenAddModal = () => {
         setAddForm({
@@ -120,7 +115,7 @@ const Kamar = () => {
             {/* Room Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {rooms.map((room) => {
-                    const tenant = getTenantByRoomId(room.id);
+                    const tenant = room.tenant;
                     const isOccupied = room.status_kamar === 'Terisi';
 
                     return (

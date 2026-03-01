@@ -14,6 +14,7 @@ export const ROOM_STATUS = {
 export const BILLING_STATUS = {
     UNPAID: 'Belum Bayar',
     PAID: 'Lunas',
+    OVERDUE: 'Terlambat',
 };
 
 export const PAYMENT_METHODS = [
@@ -28,5 +29,6 @@ export const NAV_ITEMS = [
     { path: '/kamar', label: 'Kamar', icon: 'DoorOpen' },
     { path: '/penghuni', label: 'Penghuni', icon: 'Users' },
     { path: '/tagihan', label: 'Tagihan', icon: 'Receipt' },
+    { path: '/reminder', label: 'Reminder', icon: 'Bell' },
     { path: '/pengaturan', label: 'Pengaturan', icon: 'Settings' },
 ];
