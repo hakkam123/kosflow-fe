@@ -15,6 +15,9 @@ import Penghuni from './pages/Penghuni';
 import Tagihan from './pages/Tagihan';
 import Pengaturan from './pages/Pengaturan';
 import Reminder from './pages/Reminder';
+import MonitorKamera from './pages/MonitorKamera';
+import LogAkses from './pages/LogAkses';
+import NotifikasiFace from './pages/NotifikasiFace';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -83,6 +86,9 @@ function App() {
             <Route path="penghuni" element={<Penghuni />} />
             <Route path="tagihan" element={<Tagihan />} />
             <Route path="reminder" element={<Reminder />} />
+            <Route path="monitor-kamera" element={<MonitorKamera />} />
+            <Route path="log-akses" element={<LogAkses />} />
+            <Route path="notifikasi-face" element={<NotifikasiFace />} />
             <Route path="pengaturan" element={<Pengaturan />} />
           </Route>
 

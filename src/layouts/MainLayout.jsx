@@ -1,8 +1,12 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
+import { useSocket } from '../hooks/useSocket';
 
 const MainLayout = () => {
+    // Connect socket.io for real-time face notifications
+    useSocket();
+
     return (
         <div className="min-h-screen bg-bg-main">
             {/* Sidebar - Fixed position */}

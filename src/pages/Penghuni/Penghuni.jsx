@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Phone, Mail, User, MessageCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Plus, Phone, Mail, User, MessageCircle, Camera, Trash2, Upload } from 'lucide-react';
 import { useTenantStore, useRoomStore } from '../../context';
+import { useFaceStore } from '../../context/faceStore';
+import faceService from '../../services/faceService';
 import { useToast } from '@/components/ui/toast';
 import {
     Dialog,
@@ -13,14 +15,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+const UPLOADS_URL = faceService.getUploadsUrl();
+
 const Penghuni = () => {
     const { toast } = useToast();
     const { tenants, fetchTenants, addTenant, updateTenant, deleteTenant, isLoading } = useTenantStore();
     const { rooms, fetchRooms } = useRoomStore();
+    const { uploadFace, removeFace } = useFaceStore();
 
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingTenant, setEditingTenant] = useState(null);
+    const [isFaceModalOpen, setIsFaceModalOpen] = useState(false);
+    const [faceTenant, setFaceTenant] = useState(null);
+    const [faceFile, setFaceFile] = useState(null);
+    const [facePreview, setFacePreview] = useState(null);
+    const [isUploadingFace, setIsUploadingFace] = useState(false);
+    const faceInputRef = useRef(null);
 
     const [addForm, setAddForm] = useState({
         nama_penghuni: '',
@@ -111,6 +122,54 @@ const Penghuni = () => {
         }
     };
 
+    // Face photo handlers
+    const handleOpenFaceModal = (tenant) => {
+        setFaceTenant(tenant);
+        setFaceFile(null);
+        setFacePreview(null);
+        setIsFaceModalOpen(true);
+    };
+
+    const handleFaceFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setFaceFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => setFacePreview(reader.result);
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleUploadFace = async () => {
+        if (!faceFile || !faceTenant) return;
+        setIsUploadingFace(true);
+        try {
+            const result = await uploadFace(faceTenant.id, faceFile);
+            if (result.success) {
+                toast.success({ title: 'Berhasil!', description: 'Foto wajah berhasil diupload dan di-encode' });
+                await fetchTenants();
+                setIsFaceModalOpen(false);
+            } else {
+                toast.error({ title: 'Gagal', description: result.error });
+            }
+        } catch (err) {
+            toast.error({ title: 'Error', description: 'Gagal upload foto wajah' });
+        } finally {
+            setIsUploadingFace(false);
+        }
+    };
+
+    const handleRemoveFace = async (tenant) => {
+        if (!window.confirm(`Hapus data wajah ${tenant.nama_penghuni}?`)) return;
+        const result = await removeFace(tenant.id);
+        if (result.success) {
+            toast.success({ title: 'Berhasil!', description: 'Data wajah berhasil dihapus' });
+            await fetchTenants();
+        } else {
+            toast.error({ title: 'Gagal', description: result.error });
+        }
+    };
+
     return (
         <div className="p-6 bg-gray-50 min-h-screen">
             {/* Header */}
@@ -135,11 +194,19 @@ const Penghuni = () => {
 
                     return (
                         <div key={tenant.id} className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-                            {/* Header with Icon and Name */}
+                            {/* Header with Icon/Photo and Name */}
                             <div className="flex items-start gap-3 mb-4">
-                                <div className="w-12 h-12 rounded-lg bg-[#059669]/10 flex items-center justify-center flex-shrink-0">
-                                    <User className="h-6 w-6 text-[#059669]" />
-                                </div>
+                                {tenant.foto_wajah ? (
+                                    <img
+                                        src={`${UPLOADS_URL}/${tenant.foto_wajah}`}
+                                        alt={tenant.nama_penghuni}
+                                        className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+                                    />
+                                ) : (
+                                    <div className="w-12 h-12 rounded-lg bg-[#059669]/10 flex items-center justify-center flex-shrink-0">
+                                        <User className="h-6 w-6 text-[#059669]" />
+                                    </div>
+                                )}
                                 <div className="flex-1 min-w-0">
                                     <h3 className="font-semibold text-gray-900 truncate">{tenant.nama_penghuni}</h3>
                                     <p className="text-sm text-[#059669] font-medium">{room?.nomor_kamar || 'Belum ada kamar'}</p>
@@ -164,6 +231,14 @@ const Penghuni = () => {
                                         <span className="text-gray-400">Telegram belum terhubung</span>
                                     )}
                                 </div>
+                                <div className="flex items-center gap-2 text-sm">
+                                    <Camera className="h-4 w-4 flex-shrink-0" />
+                                    {tenant.face_encoding ? (
+                                        <span className="text-[#059669] font-medium">Wajah terdaftar</span>
+                                    ) : (
+                                        <span className="text-gray-400">Wajah belum terdaftar</span>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Date */}
@@ -173,6 +248,17 @@ const Penghuni = () => {
 
                             {/* Actions */}
                             <div className="flex gap-2 pt-4 border-t border-gray-100">
+                                <button
+                                    onClick={() => handleOpenFaceModal(tenant)}
+                                    className={`px-3 py-2 border border-gray-200 rounded-lg text-sm font-medium transition-all ${
+                                        tenant.face_encoding
+                                            ? 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100'
+                                            : 'bg-white hover:bg-blue-50 text-blue-600'
+                                    }`}
+                                    title={tenant.face_encoding ? 'Update Foto Wajah' : 'Upload Foto Wajah'}
+                                >
+                                    <Camera className="h-4 w-4" />
+                                </button>
                                 <button
                                     onClick={() => handleOpenEditModal(tenant)}
                                     className="flex-1 px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium transition-all"
@@ -386,6 +472,94 @@ const Penghuni = () => {
                         </Button>
                         <Button onClick={handleEditTenant} className="bg-[#059669] hover:bg-[#047857]">
                             Simpan
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Face Photo Upload Modal */}
+            <Dialog open={isFaceModalOpen} onOpenChange={setIsFaceModalOpen}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>
+                            {faceTenant?.face_encoding ? 'Update Foto Wajah' : 'Upload Foto Wajah'}
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+                        <p className="text-sm text-gray-500">
+                            {faceTenant?.nama_penghuni} — Upload foto wajah untuk face recognition di pintu kos.
+                        </p>
+
+                        {/* Current Face Photo */}
+                        {faceTenant?.foto_wajah && !facePreview && (
+                            <div className="text-center">
+                                <img
+                                    src={`${UPLOADS_URL}/${faceTenant.foto_wajah}`}
+                                    alt="Foto wajah saat ini"
+                                    className="w-32 h-32 rounded-xl object-cover mx-auto border-2 border-green-200"
+                                />
+                                <p className="text-xs text-green-600 mt-2 font-medium">Foto wajah saat ini</p>
+                            </div>
+                        )}
+
+                        {/* Preview New Photo */}
+                        {facePreview && (
+                            <div className="text-center">
+                                <img
+                                    src={facePreview}
+                                    alt="Preview"
+                                    className="w-32 h-32 rounded-xl object-cover mx-auto border-2 border-blue-200"
+                                />
+                                <p className="text-xs text-blue-600 mt-2 font-medium">Foto baru</p>
+                            </div>
+                        )}
+
+                        {/* File Input */}
+                        <div>
+                            <input
+                                ref={faceInputRef}
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                onChange={handleFaceFileChange}
+                                className="hidden"
+                            />
+                            <button
+                                onClick={() => faceInputRef.current?.click()}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 hover:border-[#059669] rounded-xl text-sm text-gray-600 hover:text-[#059669] transition-all"
+                            >
+                                <Upload className="h-4 w-4" />
+                                {faceFile ? faceFile.name : 'Pilih foto wajah (JPG, PNG)'}
+                            </button>
+                            <p className="text-xs text-gray-400 mt-1">
+                                Pastikan foto menampilkan wajah dengan jelas. Maks 10MB.
+                            </p>
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        {faceTenant?.face_encoding && (
+                            <Button
+                                variant="destructive"
+                                onClick={() => {
+                                    handleRemoveFace(faceTenant);
+                                    setIsFaceModalOpen(false);
+                                }}
+                                className="mr-auto"
+                            >
+                                <Trash2 className="h-4 w-4 mr-1" />
+                                Hapus Wajah
+                            </Button>
+                        )}
+                        <Button variant="outline" onClick={() => setIsFaceModalOpen(false)}>
+                            Batal
+                        </Button>
+                        <Button
+                            onClick={handleUploadFace}
+                            disabled={!faceFile || isUploadingFace}
+                            className="bg-[#059669] hover:bg-[#047857]"
+                        >
+                            {isUploadingFace ? 'Memproses...' : 'Upload'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
