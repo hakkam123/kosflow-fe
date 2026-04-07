@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Sparkles, Clock, CheckCircle2, AlertTriangle, Trash2, CreditCard, ExternalLink } from 'lucide-react';
+import { Plus, Sparkles, Clock, CheckCircle2, AlertTriangle, Trash2, CreditCard, ExternalLink, FileDown } from 'lucide-react';
 import { useBillingStore, useTenantStore, useRoomStore } from '../../context';
 import { useToast } from '@/components/ui/toast';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import {
     Dialog,
     DialogContent,
@@ -29,6 +31,8 @@ const Tagihan = () => {
     const [isManualModalOpen, setIsManualModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedBilling, setSelectedBilling] = useState(null);
+    const [reportMonth, setReportMonth] = useState(String(new Date().getMonth() + 1).padStart(2, '0'));
+    const [reportYear, setReportYear] = useState(String(new Date().getFullYear()));
 
     // Generate Otomatis form
     const [generateForm, setGenerateForm] = useState({
@@ -175,6 +179,107 @@ const Tagihan = () => {
         }
     };
 
+    const monthOptions = [
+        { value: '01', label: 'Januari' },
+        { value: '02', label: 'Februari' },
+        { value: '03', label: 'Maret' },
+        { value: '04', label: 'April' },
+        { value: '05', label: 'Mei' },
+        { value: '06', label: 'Juni' },
+        { value: '07', label: 'Juli' },
+        { value: '08', label: 'Agustus' },
+        { value: '09', label: 'September' },
+        { value: '10', label: 'Oktober' },
+        { value: '11', label: 'November' },
+        { value: '12', label: 'Desember' },
+    ];
+
+    const availableYears = Array.from(
+        new Set([
+            ...billings
+                .map((billing) => {
+                    if (!billing.bulan_tagihan) return null;
+                    const [year] = String(billing.bulan_tagihan).split('-');
+                    return /^\d{4}$/.test(year || '') ? year : null;
+                })
+                .filter(Boolean),
+            String(new Date().getFullYear()),
+        ])
+    )
+        .sort((a, b) => Number(b) - Number(a));
+
+    const formatRupiah = (amount) => `Rp ${Number(amount || 0).toLocaleString('id-ID')}`;
+
+    const handleGenerateMonthlyReportPdf = () => {
+        if (!reportMonth || !reportYear) {
+            toast.error({ title: 'Error', description: 'Pilih bulan dan tahun laporan terlebih dahulu' });
+            return;
+        }
+
+        const periodKey = `${reportYear}-${reportMonth}`;
+        const reportBillings = billings.filter((billing) => {
+            const period = String(billing.bulan_tagihan || '').slice(0, 7);
+            return period === periodKey;
+        });
+
+        if (reportBillings.length === 0) {
+            toast.error({
+                title: 'Data tidak ditemukan',
+                description: 'Tidak ada tagihan untuk bulan dan tahun yang dipilih',
+            });
+            return;
+        }
+
+        const monthName = monthOptions.find((month) => month.value === reportMonth)?.label || reportMonth;
+        const pendingCount = reportBillings.filter((billing) => billing.status_tagihan === 'Belum Bayar').length;
+        const paidCount = reportBillings.filter((billing) => billing.status_tagihan === 'Lunas').length;
+        const overdueCount = reportBillings.filter((billing) => billing.status_tagihan === 'Terlambat').length;
+        const totalAmount = reportBillings.reduce((sum, billing) => sum + Number(billing.total_tagihan || 0), 0);
+
+        const doc = new jsPDF();
+        doc.setFontSize(16);
+        doc.text('Laporan Tagihan Bulanan', 14, 16);
+
+        doc.setFontSize(11);
+        doc.text(`Periode: ${monthName} ${reportYear}`, 14, 24);
+        doc.text(`Tanggal cetak: ${new Date().toLocaleDateString('id-ID')}`, 14, 30);
+
+        doc.text(`Total Tagihan: ${reportBillings.length}`, 14, 40);
+        doc.text(`Belum Bayar: ${pendingCount}`, 14, 46);
+        doc.text(`Lunas: ${paidCount}`, 14, 52);
+        doc.text(`Terlambat: ${overdueCount}`, 14, 58);
+        doc.text(`Total Nominal: ${formatRupiah(totalAmount)}`, 14, 64);
+
+        autoTable(doc, {
+            startY: 72,
+            head: [['No', 'Nama Penghuni', 'Kamar', 'Periode', 'Jatuh Tempo', 'Status', 'Nominal']],
+            body: reportBillings.map((billing, index) => [
+                index + 1,
+                getTenantName(billing),
+                getRoomNumber(billing),
+                billing.bulan_tagihan || '-',
+                formatDate(billing.tanggal_jatuh_tempo),
+                getStatusLabel(billing.status_tagihan),
+                formatRupiah(billing.total_tagihan),
+            ]),
+            styles: {
+                fontSize: 9,
+                cellPadding: 2,
+            },
+            headStyles: {
+                fillColor: [5, 150, 105],
+            },
+        });
+
+        const safeMonthName = monthName.toLowerCase();
+        doc.save(`laporan-tagihan-${safeMonthName}-${reportYear}.pdf`);
+
+        toast.success({
+            title: 'Berhasil',
+            description: 'Laporan bulanan berhasil dibuat dan diunduh',
+        });
+    };
+
     return (
         <div className="p-6 bg-gray-50 min-h-screen">
             {/* Header */}
@@ -244,22 +349,58 @@ const Tagihan = () => {
             <div className="bg-white rounded-xl shadow-sm border border-gray-100">
                 {/* Filter Tabs */}
                 <div className="border-b border-gray-100 px-6 py-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between">
                         <h3 className="font-semibold text-gray-900">Daftar Tagihan</h3>
-                        <div className="flex gap-2">
-                            {['all', 'menunggu', 'lunas', 'terlambat'].map((filter) => (
-                                <button
-                                    key={filter}
-                                    onClick={() => setStatusFilter(filter)}
-                                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                                        statusFilter === filter
-                                            ? 'bg-gray-900 text-white'
-                                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                    }`}
+                        <div className="flex flex-col md:flex-row md:items-center gap-3">
+                            <div className="flex gap-2 flex-wrap">
+                                {['all', 'menunggu', 'lunas', 'terlambat'].map((filter) => (
+                                    <button
+                                        key={filter}
+                                        onClick={() => setStatusFilter(filter)}
+                                        className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                                            statusFilter === filter
+                                                ? 'bg-gray-900 text-white'
+                                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                        {filter === 'all' ? 'Semua' : filter.charAt(0).toUpperCase() + filter.slice(1)}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-2 p-2 rounded-lg bg-gray-50 border border-gray-200">
+                                <select
+                                    value={reportMonth}
+                                    onChange={(e) => setReportMonth(e.target.value)}
+                                    className="px-3 py-2 bg-white border border-gray-200 rounded-md text-sm text-gray-700"
                                 >
-                                    {filter === 'all' ? 'Semua' : filter.charAt(0).toUpperCase() + filter.slice(1)}
+                                    {monthOptions.map((month) => (
+                                        <option key={month.value} value={month.value}>
+                                            {month.label}
+                                        </option>
+                                    ))}
+                                </select>
+
+                                <select
+                                    value={reportYear}
+                                    onChange={(e) => setReportYear(e.target.value)}
+                                    className="px-3 py-2 bg-white border border-gray-200 rounded-md text-sm text-gray-700"
+                                >
+                                    {availableYears.map((year) => (
+                                        <option key={year} value={year}>
+                                            {year}
+                                        </option>
+                                    ))}
+                                </select>
+
+                                <button
+                                    onClick={handleGenerateMonthlyReportPdf}
+                                    className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium bg-[#059669] hover:bg-[#047857] text-white transition-colors"
+                                >
+                                    <FileDown className="h-4 w-4" />
+                                    Generate PDF
                                 </button>
-                            ))}
+                            </div>
                         </div>
                     </div>
                 </div>
