@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Plus, Pencil, Trash2, Search, ToggleLeft, ToggleRight, Send } from 'lucide-react';
+import { Bell, Plus, Pencil, Trash2, Search, ToggleLeft, ToggleRight, Send, Mail } from 'lucide-react';
 import { useTenantStore, useRoomStore } from '../../context';
 import { useReminderStore } from '../../context/reminderStore';
 import { useToast } from '@/components/ui/toast';
@@ -33,6 +33,7 @@ const Reminder = () => {
     const [form, setForm] = useState({
         hari_sebelum_jatuh_tempo: '',
         pesan_custom: '',
+        channel: 'telegram',
         aktif: true,
     });
     const [testingId, setTestingId] = useState(null);
@@ -65,7 +66,7 @@ const Reminder = () => {
         setSelectedTenant(tenant);
         setIsEditing(false);
         setSelectedReminder(null);
-        setForm({ hari_sebelum_jatuh_tempo: '', pesan_custom: '', aktif: true });
+        setForm({ hari_sebelum_jatuh_tempo: '', pesan_custom: '', channel: 'telegram', aktif: true });
         setIsModalOpen(true);
     };
 
@@ -76,6 +77,7 @@ const Reminder = () => {
         setForm({
             hari_sebelum_jatuh_tempo: String(reminder.hari_sebelum_jatuh_tempo),
             pesan_custom: reminder.pesan_custom || '',
+            channel: reminder.channel || 'telegram',
             aktif: reminder.aktif,
         });
         setIsModalOpen(true);
@@ -91,6 +93,7 @@ const Reminder = () => {
             penghuni_id: selectedTenant.id,
             hari_sebelum_jatuh_tempo: parseInt(form.hari_sebelum_jatuh_tempo),
             pesan_custom: form.pesan_custom || null,
+            channel: form.channel,
             aktif: form.aktif,
         };
 
@@ -159,7 +162,7 @@ const Reminder = () => {
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Reminder</h1>
                     <p className="text-gray-500 text-sm mt-1">
-                        Kelola pengingat tagihan via Telegram per penghuni
+                        Kelola pengingat tagihan via Telegram dan Email per penghuni
                     </p>
                 </div>
             </div>
@@ -194,6 +197,12 @@ const Reminder = () => {
                                             {tenant.telegram_chat_id
                                                 ? <span className="ml-2 text-green-600 text-xs">● Telegram aktif</span>
                                                 : <span className="ml-2 text-orange-500 text-xs">● Telegram belum terhubung</span>
+                                            }
+                                        </p>
+                                        <p className="text-xs mt-1">
+                                            {tenant.email
+                                                ? <span className="text-green-600">● Email aktif ({tenant.email})</span>
+                                                : <span className="text-orange-500">● Email belum terdaftar</span>
                                             }
                                         </p>
                                     </div>
@@ -233,6 +242,9 @@ const Reminder = () => {
                                                     <p className={`text-sm font-medium ${reminder.aktif ? 'text-gray-900' : 'text-gray-400'}`}>
                                                         H-{reminder.hari_sebelum_jatuh_tempo}
                                                     </p>
+                                                    <p className="text-xs text-gray-400 capitalize">
+                                                        Channel: {reminder.channel || 'telegram'}
+                                                    </p>
                                                     {reminder.pesan_custom && (
                                                         <p className="text-xs text-gray-400 truncate max-w-[140px]">
                                                             {reminder.pesan_custom}
@@ -245,7 +257,7 @@ const Reminder = () => {
                                                     onClick={() => handleTestSend(reminder)}
                                                     disabled={testingId === reminder.id}
                                                     className="p-1.5 rounded hover:bg-green-50 text-green-600 transition-colors disabled:opacity-50"
-                                                    title="Test kirim ke Telegram"
+                                                    title="Test kirim reminder"
                                                 >
                                                     <Send className={`h-3.5 w-3.5 ${testingId === reminder.id ? 'animate-pulse' : ''}`} />
                                                 </button>
@@ -317,6 +329,24 @@ const Reminder = () => {
                                 onChange={(e) => setForm({ ...form, pesan_custom: e.target.value })}
                                 className="mt-2 w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-[#059669] transition-all resize-none"
                             />
+                        </div>
+
+                        <div>
+                            <Label htmlFor="channel">Channel Reminder*</Label>
+                            <select
+                                id="channel"
+                                value={form.channel}
+                                onChange={(e) => setForm({ ...form, channel: e.target.value })}
+                                className="mt-2 block w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-[#059669] transition-all"
+                            >
+                                <option value="telegram">Telegram</option>
+                                <option value="email">Email</option>
+                                <option value="both">Telegram + Email</option>
+                            </select>
+                            <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                                <Mail className="h-3 w-3" />
+                                Untuk channel Email, pastikan email penghuni sudah terisi di halaman Penghuni.
+                            </p>
                         </div>
 
                         <div className="flex items-center gap-3">

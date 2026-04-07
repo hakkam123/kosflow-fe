@@ -91,12 +91,19 @@ const Penghuni = () => {
             kamar_id: parseInt(addForm.kamar_id),
         };
 
-        await addTenant(data);
-        toast.success({
-            title: 'Berhasil!',
-            description: 'Penghuni baru telah ditambahkan',
-        });
-        setIsAddModalOpen(false);
+        const result = await addTenant(data);
+        if (result.success) {
+            toast.success({
+                title: 'Berhasil!',
+                description: 'Penghuni baru telah ditambahkan',
+            });
+            setIsAddModalOpen(false);
+        } else {
+            toast.error({
+                title: 'Gagal',
+                description: result.error || 'Gagal menambahkan penghuni',
+            });
+        }
     };
 
     const handleEditTenant = async () => {
@@ -104,12 +111,19 @@ const Penghuni = () => {
             ...editForm,
             kamar_id: editForm.kamar_id ? parseInt(editForm.kamar_id) : null,
         };
-        await updateTenant(editingTenant.id, data);
-        toast.success({
-            title: 'Berhasil!',
-            description: 'Data penghuni telah diperbarui',
-        });
-        setIsEditModalOpen(false);
+        const result = await updateTenant(editingTenant.id, data);
+        if (result.success) {
+            toast.success({
+                title: 'Berhasil!',
+                description: 'Data penghuni telah diperbarui',
+            });
+            setIsEditModalOpen(false);
+        } else {
+            toast.error({
+                title: 'Gagal',
+                description: result.error || 'Gagal memperbarui penghuni',
+            });
+        }
     };
 
     const handleDeleteTenant = async (id, name) => {
@@ -222,6 +236,14 @@ const Penghuni = () => {
                                 <div className="flex items-center gap-2 text-sm text-gray-600">
                                     <Mail className="h-4 w-4 flex-shrink-0" />
                                     <span className="truncate">{tenant.email || '-'}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-sm">
+                                    <Mail className="h-4 w-4 flex-shrink-0" />
+                                    {tenant.email ? (
+                                        <span className="text-[#059669] font-medium">Notifikasi email aktif</span>
+                                    ) : (
+                                        <span className="text-gray-400">Notifikasi email belum aktif</span>
+                                    )}
                                 </div>
                                 <div className="flex items-center gap-2 text-sm">
                                     <MessageCircle className="h-4 w-4 flex-shrink-0" />
