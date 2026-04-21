@@ -18,6 +18,7 @@ import Reminder from './pages/Reminder';
 import MonitorKamera from './pages/MonitorKamera';
 import LogAkses from './pages/LogAkses';
 import NotifikasiFace from './pages/NotifikasiFace';
+import { UserLoginOTP, DashboardUser } from './pages/DashboardUser';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -91,6 +92,10 @@ function App() {
             <Route path="notifikasi-face" element={<NotifikasiFace />} />
             <Route path="pengaturan" element={<Pengaturan />} />
           </Route>
+
+          {/* User Dashboard Routes (Mobile Only View) */}
+          <Route path="/user/login" element={<UserLoginOTP />} />
+          <Route path="/user/dashboard" element={<DashboardUser />} />
 
           {/* Catch all - redirect to dashboard */}
           <Route path="*" element={<Navigate to="/" replace />} />
