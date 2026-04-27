@@ -6,7 +6,6 @@ import { ToastProvider } from '@/components/ui/toast';
 
 // Pages
 import Login from './pages/Login';
-import Register from './pages/Register';
 import VerifyEmail from './pages/VerifyEmail';
 import Dashboard from './pages/Dashboard';
 import Kamar from './pages/Kamar';
@@ -53,14 +52,6 @@ function App() {
             element={
               <PublicRoute>
                 <Login />
-              </PublicRoute>
-            }
-          />
-          <Route
-            path="/register"
-            element={
-              <PublicRoute>
-                <Register />
               </PublicRoute>
             }
           />

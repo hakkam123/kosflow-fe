@@ -13,6 +13,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+/**
+ * Komponen Pengaturan - Halaman konfigurasi sistem kos.
+ * Mengatur tanggal tagihan bulanan, jadwal pengingat, dan template pesan WhatsApp.
+ * 
+ * @returns {JSX.Element} Halaman Pengaturan Sistem.
+ */
 const Pengaturan = () => {
     const { toast } = useToast();
     const [billingDate, setBillingDate] = useState('');
@@ -33,6 +39,10 @@ const Pengaturan = () => {
     const [currentTemplate, setCurrentTemplate] = useState(null);
     const [editingMessage, setEditingMessage] = useState('');
 
+    /**
+     * Menyimpan pengaturan ke sistem.
+     * Saat ini merupakan simulasi menggunakan toast success.
+     */
     const handleSave = () => {
         toast.success({
             title: 'Berhasil!',
@@ -40,12 +50,22 @@ const Pengaturan = () => {
         });
     };
 
+    /**
+     * Toggles hari pengingat sebelum jatuh tempo.
+     * 
+     * @param {number} day - Hari (H-x) yang akan di-toggle.
+     */
     const toggleReminderBefore = (day) => {
         setReminderBefore(prev =>
             prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day].sort((a, b) => a - b)
         );
     };
 
+    /**
+     * Toggles hari pengingat setelah jatuh tempo.
+     * 
+     * @param {number} day - Hari (H+x) yang akan di-toggle.
+     */
     const toggleReminderAfter = (day) => {
         setReminderAfter(prev =>
             prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day].sort((a, b) => a - b)
@@ -60,12 +80,20 @@ const Pengaturan = () => {
         { id: 'mismatch', label: 'Pesan Tidak Sesuai' },
     ];
 
+    /**
+     * Membuka editor modal untuk template pesan WhatsApp tertentu.
+     * 
+     * @param {string} templateId - ID template yang akan diedit.
+     */
     const openMessageEditor = (templateId) => {
         setCurrentTemplate(templateId);
         setEditingMessage(whatsappMessages[templateId]);
         setIsModalOpen(true);
     };
 
+    /**
+     * Menyimpan perubahan pada template pesan WhatsApp.
+     */
     const saveMessage = () => {
         setWhatsappMessages(prev => ({
             ...prev,
@@ -78,7 +106,11 @@ const Pengaturan = () => {
         });
     };
 
-    // Get billing date text
+    /**
+     * Mendapatkan teks tanggal tagihan yang disetel dari state.
+     * 
+     * @returns {string|number} Tanggal tagihan (tanggal saja) atau string default.
+     */
     const getBillingDateText = () => {
         if (!billingDate) return '...';
         const date = new Date(billingDate);

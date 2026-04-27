@@ -17,6 +17,12 @@ import { Label } from '@/components/ui/label';
 
 const UPLOADS_URL = faceService.getUploadsUrl();
 
+/**
+ * Komponen Penghuni - Halaman manajemen pengguna/penghuni kos.
+ * Memungkinkan admin untuk mengelola data penghuni, alokasi kamar, serta foto wajah untuk deteksi.
+ * 
+ * @returns {JSX.Element} Halaman Manajemen Penghuni.
+ */
 const Penghuni = () => {
     const { toast } = useToast();
     const { tenants, fetchTenants, addTenant, updateTenant, deleteTenant, isLoading } = useTenantStore();
@@ -57,8 +63,17 @@ const Penghuni = () => {
         fetchRooms();
     }, []);
 
+    /**
+     * Mendapatkan objek kamar berdasarkan ID kamar.
+     * 
+     * @param {number|string} id - ID Kamar.
+     * @returns {Object|undefined} Objek kamar yang cocok.
+     */
     const getRoomById = (id) => rooms.find((r) => r.id === id);
 
+    /**
+     * Membuka modal form tambah penghuni dan mereset nilai form.
+     */
     const handleOpenAddModal = () => {
         setAddForm({
             nama_penghuni: '',
@@ -72,6 +87,11 @@ const Penghuni = () => {
         setIsAddModalOpen(true);
     };
 
+    /**
+     * Membuka modal edit penghuni dan mengisi data form dengan tenant terpilih.
+     * 
+     * @param {Object} tenant - Objek tenant yang akan diedit.
+     */
     const handleOpenEditModal = (tenant) => {
         setEditingTenant(tenant);
         setEditForm({
@@ -85,6 +105,11 @@ const Penghuni = () => {
         setIsEditModalOpen(true);
     };
 
+    /**
+     * Menangani proses penambahan data penghuni ke server.
+     * 
+     * @async
+     */
     const handleAddTenant = async () => {
         const data = {
             ...addForm,
@@ -99,6 +124,11 @@ const Penghuni = () => {
         setIsAddModalOpen(false);
     };
 
+    /**
+     * Menangani proses pembaruan data penghuni yang sudah ada.
+     * 
+     * @async
+     */
     const handleEditTenant = async () => {
         const data = {
             ...editForm,
@@ -112,6 +142,13 @@ const Penghuni = () => {
         setIsEditModalOpen(false);
     };
 
+    /**
+     * Menangani proses penghapusan data penghuni setelah konfirmasi.
+     * 
+     * @async
+     * @param {number|string} id - ID tenant.
+     * @param {string} name - Nama tenant untuk konfirmasi.
+     */
     const handleDeleteTenant = async (id, name) => {
         if (window.confirm(`Apakah Anda yakin ingin menghapus ${name}?`)) {
             await deleteTenant(id);
@@ -122,7 +159,11 @@ const Penghuni = () => {
         }
     };
 
-    // Face photo handlers
+    /**
+     * Membuka modal unggah/edit foto wajah untuk keperluan Face Recognition.
+     * 
+     * @param {Object} tenant - Objek tenant terkait.
+     */
     const handleOpenFaceModal = (tenant) => {
         setFaceTenant(tenant);
         setFaceFile(null);
@@ -130,6 +171,12 @@ const Penghuni = () => {
         setIsFaceModalOpen(true);
     };
 
+    /**
+     * Menangani perubahan file pada input upload foto wajah.
+     * Akan menampilkan preview gambar lokal.
+     * 
+     * @param {Event} e - Event onChange input file.
+     */
     const handleFaceFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -140,6 +187,12 @@ const Penghuni = () => {
         }
     };
 
+    /**
+     * Menangani proses upload foto wajah ke server.
+     * Data foto akan diproses untuk encoding wajah (face recognition).
+     * 
+     * @async
+     */
     const handleUploadFace = async () => {
         if (!faceFile || !faceTenant) return;
         setIsUploadingFace(true);
@@ -159,6 +212,12 @@ const Penghuni = () => {
         }
     };
 
+    /**
+     * Menghapus data foto dan encoding wajah milik penghuni.
+     * 
+     * @async
+     * @param {Object} tenant - Objek tenant yang wajahnya akan dihapus.
+     */
     const handleRemoveFace = async (tenant) => {
         if (!window.confirm(`Hapus data wajah ${tenant.nama_penghuni}?`)) return;
         const result = await removeFace(tenant.id);

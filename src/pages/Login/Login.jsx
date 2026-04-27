@@ -100,13 +100,7 @@ const Login = () => {
                         </div>
                     </form>
 
-                    {/* Footer Link */}
-                    <p className="text-center text-sm text-gray-500 mt-6">
-                        Belum punya akun?{' '}
-                        <Link to="/register" className="font-semibold text-gray-700 hover:text-[#059669] transition-colors">
-                            Buat Sekarang!
-                        </Link>
-                    </p>
+                    
                 </div>
             </div>
         </div>

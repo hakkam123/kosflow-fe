@@ -4,6 +4,12 @@ import faceService from '../../services/faceService';
 import { useFaceStore } from '../../context/faceStore';
 import { useToast } from '@/components/ui/toast';
 
+/**
+ * Komponen MonitorKamera - Halaman pemantauan sistem pengenalan wajah melalui web camera.
+ * Melakukan deteksi wajah secara real-time dan memberikan peringatan untuk wajah tak dikenal.
+ * 
+ * @returns {JSX.Element} Halaman Monitor Kamera.
+ */
 const MonitorKamera = () => {
   const { toast } = useToast();
   const { fetchUnreadCount } = useFaceStore();
@@ -23,7 +29,11 @@ const MonitorKamera = () => {
 
   const COOLDOWN_MS = 15000; // 15s cooldown per person
 
-  // Start camera
+  /**
+   * Memulai akses ke web camera dan menetapkan stream ke elemen video.
+   * 
+   * @async
+   */
   const startCamera = useCallback(async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
@@ -42,7 +52,9 @@ const MonitorKamera = () => {
     }
   }, [toast]);
 
-  // Stop camera
+  /**
+   * Menghentikan akses kamera, membersihkan stream, overlay canvas, dan timer deteksi.
+   */
   const stopCamera = useCallback(() => {
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
@@ -65,7 +77,12 @@ const MonitorKamera = () => {
     }
   }, [stream]);
 
-  // Detect faces
+  /**
+   * Menjalankan proses deteksi wajah dengan mengambil frame dari video,
+   * mengirimnya ke faceService, dan menggambar bounding box pada canvas overlay.
+   * 
+   * @async
+   */
   const detectFaces = useCallback(async () => {
     if (!videoRef.current || !captureRef.current || !detectionActive) return;
 
@@ -160,7 +177,9 @@ const MonitorKamera = () => {
     }
   }, [detectionActive, detectionInterval, lastDetections, toast, fetchUnreadCount]);
 
-  // Toggle detection
+  /**
+   * Menghidupkan atau mematikan loop deteksi wajah secara periodik.
+   */
   const toggleDetection = useCallback(() => {
     if (detectionActive) {
       setDetectionActive(false);

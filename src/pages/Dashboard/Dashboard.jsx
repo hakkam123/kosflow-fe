@@ -96,7 +96,13 @@ const recentActivities = [
     },
 ];
 
-// Stats Card Component
+/**
+ * Komponen StatsCard - Menampilkan kartu statistik dengan ikon, nilai, dan judul.
+ * 
+ * @param {Object} props - Properti komponen.
+ * @param {Object} props.stat - Objek data statistik yang berisi title, value, subtitle, icon, iconBg, dan iconColor.
+ * @returns {JSX.Element} Kartu statistik UI.
+ */
 const StatsCard = ({ stat }) => {
     const Icon = stat.icon;
     return (
@@ -115,7 +121,13 @@ const StatsCard = ({ stat }) => {
     );
 };
 
-// Overdue Payment Item Component
+/**
+ * Komponen OverduePaymentItem - Menampilkan baris item untuk pembayaran yang terlambat.
+ * 
+ * @param {Object} props - Properti komponen.
+ * @param {Object} props.payment - Objek data pembayaran terlambat (nama, kamar, status, amount, statusColor).
+ * @returns {JSX.Element} Baris item pembayaran terlambat UI.
+ */
 const OverduePaymentItem = ({ payment }) => {
     return (
         <div className="flex items-center justify-between py-4 border-b border-gray-100 last:border-b-0">
@@ -135,7 +147,13 @@ const OverduePaymentItem = ({ payment }) => {
     );
 };
 
-// Activity Item Component
+/**
+ * Komponen ActivityItem - Menampilkan baris item untuk aktivitas terbaru di sistem.
+ * 
+ * @param {Object} props - Properti komponen.
+ * @param {Object} props.activity - Objek data aktivitas (icon, title, time, iconBg, iconColor).
+ * @returns {JSX.Element} Baris aktivitas UI.
+ */
 const ActivityItem = ({ activity }) => {
     const Icon = activity.icon;
     return (
@@ -151,6 +169,11 @@ const ActivityItem = ({ activity }) => {
     );
 };
 
+/**
+ * Komponen Utama Dashboard - Menampilkan ringkasan statistik kos (pendapatan, ketersediaan kamar, tagihan jatuh tempo, aktivitas terbaru).
+ * 
+ * @returns {JSX.Element} Halaman Dashboard Utama.
+ */
 const Dashboard = () => {
     return (
         <div className="p-6 bg-gray-50 min-h-screen">

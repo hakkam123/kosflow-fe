@@ -5,6 +5,12 @@ import { useAuthStore } from '../../context';
 
 const TIMER_DURATION = 60; // seconds
 
+/**
+ * Komponen VerifyEmail - Halaman verifikasi kode OTP berbasis email saat registrasi.
+ * Memiliki fitur timer anti-spam, fungsionalitas auto-focus, dan paste kode.
+ * 
+ * @returns {JSX.Element} Halaman Verifikasi Email.
+ */
 const VerifyEmail = () => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -18,7 +24,9 @@ const VerifyEmail = () => {
     const inputRefs = useRef([]);
     const timerRef = useRef(null);
 
-    // Start countdown timer
+    /**
+     * Memulai timer hitung mundur 60 detik sebelum resend OTP bisa ditekan.
+     */
     const startTimer = useCallback(() => {
         setTimer(TIMER_DURATION);
         setCanResend(false);
@@ -48,14 +56,24 @@ const VerifyEmail = () => {
         };
     }, [startTimer]);
 
-    // Format timer display
+    /**
+     * Mengubah format detik menjadi format menit dan detik (MM:SS).
+     * 
+     * @param {number} seconds - Waktu sisa dalam detik.
+     * @returns {string} Waktu berformat MM:SS.
+     */
     const formatTime = (seconds) => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
-    // Handle individual digit input
+    /**
+     * Menangani input individual per digit dari kode OTP.
+     * 
+     * @param {number} index - Indeks kotak input yang sedang diisi (0-5).
+     * @param {string} value - Nilai yang diketik.
+     */
     const handleChange = (index, value) => {
         if (value.length > 1) {
             // Handle paste
@@ -84,14 +102,23 @@ const VerifyEmail = () => {
         }
     };
 
-    // Handle backspace
+    /**
+     * Menangani navigasi fokus kotak input saat user menekan Backspace.
+     * 
+     * @param {number} index - Indeks kotak input (0-5).
+     * @param {Event} e - Event key down.
+     */
     const handleKeyDown = (index, e) => {
         if (e.key === 'Backspace' && !code[index] && index > 0) {
             inputRefs.current[index - 1]?.focus();
         }
     };
 
-    // Handle paste on the container
+    /**
+     * Menangani fitur paste text untuk otomatis mengisi keenam kotak OTP.
+     * 
+     * @param {Event} e - Event clipboard paste.
+     */
     const handlePaste = (e) => {
         e.preventDefault();
         const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
@@ -106,6 +133,12 @@ const VerifyEmail = () => {
         }
     };
 
+    /**
+     * Mengirim form kode OTP untuk diverifikasi ke server.
+     * 
+     * @async
+     * @param {Event} e - Event form submit.
+     */
     const handleSubmit = async (e) => {
         e.preventDefault();
         clearError();
@@ -119,6 +152,11 @@ const VerifyEmail = () => {
         }
     };
 
+    /**
+     * Menangani pengiriman ulang kode verifikasi ke email, jika timer sudah habis.
+     * 
+     * @async
+     */
     const handleResend = async () => {
         if (!canResend) return;
         clearError();

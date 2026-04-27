@@ -14,6 +14,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatRupiah } from '../../utils/formatRupiah';
 
+/**
+ * Komponen Kamar - Halaman pengelolaan data kamar oleh admin.
+ * Memungkinkan admin untuk melihat daftar kamar, menambah kamar baru, mengedit, dan menghapus kamar.
+ * 
+ * @returns {JSX.Element} Halaman Manajemen Kamar.
+ */
 const Kamar = () => {
     const { toast } = useToast();
     const { rooms, fetchRooms, addRoom, updateRoom, deleteRoom, isLoading } = useRoomStore();
@@ -38,6 +44,9 @@ const Kamar = () => {
         fetchRooms();
     }, []);
 
+    /**
+     * Membuka modal tambah kamar baru dan mereset form ke nilai default.
+     */
     const handleOpenAddModal = () => {
         setAddForm({
             nomor_kamar: '',
@@ -47,6 +56,11 @@ const Kamar = () => {
         setIsAddModalOpen(true);
     };
 
+    /**
+     * Membuka modal edit kamar dan mengisi form dengan data kamar yang dipilih.
+     * 
+     * @param {Object} room - Objek data kamar yang akan diedit.
+     */
     const handleOpenEditModal = (room) => {
         setEditingRoom(room);
         setEditForm({
@@ -57,6 +71,12 @@ const Kamar = () => {
         setIsEditModalOpen(true);
     };
 
+    /**
+     * Menangani proses penambahan kamar baru ke dalam sistem.
+     * Mengonversi harga ke tipe integer dan memanggil API addRoom.
+     * 
+     * @async
+     */
     const handleAddRoom = async () => {
         const data = {
             ...addForm,
@@ -71,6 +91,12 @@ const Kamar = () => {
         setIsAddModalOpen(false);
     };
 
+    /**
+     * Menangani proses pembaruan data kamar.
+     * Memanggil API updateRoom dengan ID kamar yang sedang diedit.
+     * 
+     * @async
+     */
     const handleEditRoom = async () => {
         const data = {
             ...editForm,
@@ -85,6 +111,14 @@ const Kamar = () => {
         setIsEditModalOpen(false);
     };
 
+    /**
+     * Menangani proses penghapusan kamar dari sistem.
+     * Menampilkan konfirmasi terlebih dahulu sebelum memanggil API deleteRoom.
+     * 
+     * @async
+     * @param {number|string} id - ID kamar yang akan dihapus.
+     * @param {string} roomNumber - Nomor kamar untuk ditampilkan dalam konfirmasi.
+     */
     const handleDeleteRoom = async (id, roomNumber) => {
         if (window.confirm(`Apakah Anda yakin ingin menghapus ${roomNumber}?`)) {
             await deleteRoom(id);

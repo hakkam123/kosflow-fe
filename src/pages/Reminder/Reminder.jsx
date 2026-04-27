@@ -15,6 +15,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+/**
+ * Komponen Reminder - Halaman pengelolaan notifikasi pengingat Telegram untuk penghuni.
+ * Admin dapat menambah, mengubah, menguji, dan menghapus pengingat jatuh tempo bulanan.
+ * 
+ * @returns {JSX.Element} Halaman Reminder.
+ */
 const Reminder = () => {
     const { toast } = useToast();
     const { tenants, fetchTenants } = useTenantStore();
@@ -43,10 +49,22 @@ const Reminder = () => {
         fetchReminders();
     }, []);
 
+    /**
+     * Mengambil data kamar berdasarkan tenant (penghuni).
+     * 
+     * @param {Object} tenant - Objek tenant.
+     * @returns {Object|undefined} Objek kamar yang ditempati tenant tersebut.
+     */
     const getRoomForTenant = (tenant) => {
         return rooms.find(r => r.id === tenant.kamar_id);
     };
 
+    /**
+     * Mengambil semua pengingat yang terkait dengan seorang penghuni.
+     * 
+     * @param {number|string} tenantId - ID dari tenant.
+     * @returns {Array} Daftar pengingat (reminder) tenant tersebut.
+     */
     const getRemindersForTenant = (tenantId) => {
         return reminders.filter(r => r.penghuni_id === tenantId);
     };
@@ -61,6 +79,11 @@ const Reminder = () => {
         );
     });
 
+    /**
+     * Membuka modal form untuk menambahkan pengingat baru bagi penghuni tertentu.
+     * 
+     * @param {Object} tenant - Objek tenant yang akan ditambahkan pengingatnya.
+     */
     const openAddModal = (tenant) => {
         setSelectedTenant(tenant);
         setIsEditing(false);
@@ -69,6 +92,12 @@ const Reminder = () => {
         setIsModalOpen(true);
     };
 
+    /**
+     * Membuka modal edit pengingat yang sudah ada dan mengisi data form.
+     * 
+     * @param {Object} tenant - Objek tenant.
+     * @param {Object} reminder - Objek pengingat yang akan diedit.
+     */
     const openEditModal = (tenant, reminder) => {
         setSelectedTenant(tenant);
         setIsEditing(true);
@@ -81,6 +110,12 @@ const Reminder = () => {
         setIsModalOpen(true);
     };
 
+    /**
+     * Menangani proses submit form (tambah atau edit) pengingat.
+     * Melakukan validasi lalu memanggil fungsi API terkait.
+     * 
+     * @async
+     */
     const handleSubmit = async () => {
         if (!form.hari_sebelum_jatuh_tempo) {
             toast.error({ title: 'Error', description: 'Hari sebelum jatuh tempo wajib diisi' });
@@ -112,6 +147,11 @@ const Reminder = () => {
         }
     };
 
+    /**
+     * Menangani penghapusan pengingat setelah konfirmasi.
+     * 
+     * @async
+     */
     const handleDelete = async () => {
         if (!selectedReminder) return;
         const result = await deleteReminder(selectedReminder.id);
@@ -124,6 +164,12 @@ const Reminder = () => {
         setSelectedReminder(null);
     };
 
+    /**
+     * Menguji pengiriman pesan Telegram secara langsung untuk pengingat yang dipilih.
+     * 
+     * @async
+     * @param {Object} reminder - Objek pengingat yang akan dites.
+     */
     const handleTestSend = async (reminder) => {
         setTestingId(reminder.id);
         try {
@@ -142,6 +188,12 @@ const Reminder = () => {
         }
     };
 
+    /**
+     * Mengubah status aktif/nonaktif dari sebuah pengingat.
+     * 
+     * @async
+     * @param {Object} reminder - Objek pengingat yang statusnya akan diubah.
+     */
     const handleToggleActive = async (reminder) => {
         const result = await updateReminder(reminder.id, { aktif: !reminder.aktif });
         if (result.success) {

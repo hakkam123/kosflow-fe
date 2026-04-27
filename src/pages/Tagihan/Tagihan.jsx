@@ -15,6 +15,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatDate } from '@/utils/formatDate';
 
+/**
+ * Komponen Tagihan - Halaman manajemen keuangan dan tagihan bulanan kos.
+ * Memungkinkan admin untuk melihat statistik, membuat tagihan manual/otomatis, memanage status lunas,
+ * dan terintegrasi dengan Payment Gateway (Midtrans).
+ * 
+ * @returns {JSX.Element} Halaman Manajemen Tagihan.
+ */
 const Tagihan = () => {
     const { toast } = useToast();
     const {
@@ -52,10 +59,21 @@ const Tagihan = () => {
         checkOverdue();
     }, []);
 
-    // Helper: get tenant/room from billing association data (from API) or fallback
+    /**
+     * Mendapatkan nama penghuni dari relasi data tagihan.
+     * 
+     * @param {Object} billing - Objek data tagihan.
+     * @returns {string} Nama penghuni atau 'Unknown'.
+     */
     const getTenantName = (billing) => {
         return billing.tenant?.nama_penghuni || 'Unknown';
     };
+    /**
+     * Mendapatkan nomor kamar dari relasi data tagihan.
+     * 
+     * @param {Object} billing - Objek data tagihan.
+     * @returns {string} Nomor kamar atau '-'.
+     */
     const getRoomNumber = (billing) => {
         return billing.tenant?.room?.nomor_kamar || '-';
     };
@@ -76,6 +94,11 @@ const Tagihan = () => {
         return true;
     });
 
+    /**
+     * Memproses request untuk menggenerate tagihan secara otomatis bagi semua penghuni aktif.
+     * 
+     * @async
+     */
     const handleGenerateOtomatis = async () => {
         if (!generateForm.periode || !generateForm.tanggalJatuhTempo) {
             toast.error({ title: 'Error', description: 'Periode dan tanggal jatuh tempo wajib diisi' });
@@ -97,6 +120,11 @@ const Tagihan = () => {
         }
     };
 
+    /**
+     * Menangani proses penambahan tagihan baru secara manual untuk satu penghuni.
+     * 
+     * @async
+     */
     const handleTambahManual = async () => {
         if (!manualForm.penghuni || !manualForm.jumlah || !manualForm.jatuhTempo || !manualForm.periode) {
             toast.error({ title: 'Error', description: 'Semua field wajib diisi' });
@@ -120,6 +148,11 @@ const Tagihan = () => {
         }
     };
 
+    /**
+     * Menangani proses penghapusan data tagihan secara spesifik.
+     * 
+     * @async
+     */
     const handleDelete = async () => {
         if (!selectedBilling) return;
         const result = await deleteBilling(selectedBilling.id);
@@ -132,6 +165,12 @@ const Tagihan = () => {
         setSelectedBilling(null);
     };
 
+    /**
+     * Menandai status tagihan menjadi Lunas secara manual.
+     * 
+     * @async
+     * @param {Object} billing - Objek data tagihan.
+     */
     const handleMarkPaid = async (billing) => {
         const result = await updateBilling(billing.id, { status_tagihan: 'Lunas' });
         if (result.success) {
@@ -141,6 +180,12 @@ const Tagihan = () => {
         }
     };
 
+    /**
+     * Meminta Midtrans payment URL dari server dan membuka halaman pembayaran.
+     * 
+     * @async
+     * @param {Object} billing - Objek data tagihan yang akan dibayar.
+     */
     const handlePayMidtrans = async (billing) => {
         const result = await createPayment(billing.id);
         if (result.success && result.data?.payment_url) {
@@ -153,6 +198,12 @@ const Tagihan = () => {
         }
     };
 
+    /**
+     * Mendapatkan kelas Tailwind (warna latar dan teks) sesuai status tagihan.
+     * 
+     * @param {string} status - Status tagihan (Lunas, Terlambat, dll).
+     * @returns {string} Kelas Tailwind.
+     */
     const getStatusBadge = (status) => {
         switch (status) {
             case 'Lunas':
@@ -164,6 +215,12 @@ const Tagihan = () => {
         }
     };
 
+    /**
+     * Mendapatkan label tampilan standar sesuai status tagihan.
+     * 
+     * @param {string} status - Status tagihan.
+     * @returns {string} Label status format tampilan UI.
+     */
     const getStatusLabel = (status) => {
         switch (status) {
             case 'Lunas':

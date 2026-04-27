@@ -14,6 +14,12 @@ import {
 import Card from '@/components/Card';
 import Button from '@/components/Button';
 
+/**
+ * Komponen DashboardUser - Menampilkan halaman dashboard khusus untuk penghuni (tenant).
+ * Menyediakan informasi tagihan terakhir, riwayat pembayaran, dan detail sewa kamar.
+ * 
+ * @returns {JSX.Element} Halaman Dashboard User.
+ */
 const DashboardUser = () => {
   const [activeTab, setActiveTab] = useState('home');
 
@@ -40,6 +46,10 @@ const DashboardUser = () => {
     { id: 4, month: "Desember 2023", amount: "Rp 1.500.000", date: "22 Desember 2023", status: "Berhasil" },
   ];
 
+  /**
+   * Menangani aksi klik tombol bayar sekarang.
+   * Saat ini masih berupa alert simulasi.
+   */
   const handlePayment = () => {
     alert(`Memproses pembayaran untuk ${latestBill.month} sebesar ${latestBill.amount}`);
   };

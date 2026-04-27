@@ -6,6 +6,12 @@ import faceService from '../../services/faceService';
 
 const UPLOADS_URL = faceService.getUploadsUrl();
 
+/**
+ * Komponen NotifikasiFace - Halaman inbox untuk notifikasi deteksi wajah orang tidak dikenal.
+ * Memungkinkan user untuk melihat, memfilter, dan menandai notifikasi telah dibaca.
+ * 
+ * @returns {JSX.Element} Halaman Notifikasi Face.
+ */
 const NotifikasiFace = () => {
   const { toast } = useToast();
   const {
@@ -26,6 +32,12 @@ const NotifikasiFace = () => {
     fetchUnreadCount();
   }, []); // eslint-disable-line
 
+  /**
+   * Menandai notifikasi spesifik sebagai telah dibaca.
+   * 
+   * @async
+   * @param {string|number} id - ID dari notifikasi yang akan ditandai.
+   */
   const handleMarkRead = async (id) => {
     const result = await markRead(id);
     if (result.success) {
@@ -33,6 +45,11 @@ const NotifikasiFace = () => {
     }
   };
 
+  /**
+   * Menandai seluruh notifikasi yang ada sebagai telah dibaca.
+   * 
+   * @async
+   */
   const handleMarkAllRead = async () => {
     const result = await markAllRead();
     if (result.success) {
@@ -46,6 +63,12 @@ const NotifikasiFace = () => {
     return true;
   });
 
+  /**
+   * Memformat string tanggal menjadi format lokal Indonesia (tanpa detik).
+   * 
+   * @param {string} dateStr - String tanggal yang akan diformat.
+   * @returns {string} String tanggal yang sudah diformat.
+   */
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
     const d = new Date(dateStr);
