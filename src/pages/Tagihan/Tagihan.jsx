@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Sparkles, Clock, CheckCircle2, AlertTriangle, Trash2, CreditCard, ExternalLink, FileDown } from 'lucide-react';
 import { useBillingStore, useTenantStore, useRoomStore } from '../../context';
 import { useToast } from '@/components/ui/toast';
@@ -19,6 +20,7 @@ import { formatDate } from '@/utils/formatDate';
 
 const Tagihan = () => {
     const { toast } = useToast();
+    const navigate = useNavigate();
     const {
         billings, fetchBillings, generateBillings, createBilling,
         updateBilling, deleteBilling, createPayment, checkOverdue, isLoading,
@@ -146,9 +148,21 @@ const Tagihan = () => {
     };
 
     const handlePayMidtrans = async (billing) => {
-        const result = await createPayment(billing.id);
+        const result = await createPayment(billing.id, { source: 'admin' });
         if (result.success && result.data?.payment_url) {
+            // Open payment page in new tab
             window.open(result.data.payment_url, '_blank');
+            
+            // Show success toast and redirect to payment status page
+            toast.success({
+                title: 'Link Pembayaran Dibuka',
+                description: 'Halaman pembayaran telah dibuka di tab baru. Kami akan menampilkan status pembayaran Anda.',
+            });
+            
+            // Redirect to payment status page (admin version) after a brief delay
+            setTimeout(() => {
+                navigate(`/payment-status?id=${billing.id}&source=admin`);
+            }, 1000);
         } else {
             toast.error({
                 title: 'Gagal',

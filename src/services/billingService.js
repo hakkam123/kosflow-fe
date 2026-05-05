@@ -44,14 +44,23 @@ const billingService = {
     },
 
     // Create Midtrans payment link
-    createPayment: async (billingId) => {
-        const response = await api.post(`/tagihan/${billingId}/pay`);
+    // options: { source: 'admin' | 'tenant' }
+    createPayment: async (billingId, options = {}) => {
+        const response = await api.post(`/tagihan/${billingId}/pay`, {
+            source: options.source || 'admin',
+        });
         return response.data;
     },
 
     // Check & mark overdue billings
     checkOverdue: async () => {
         const response = await api.post('/tagihan/check-overdue');
+        return response.data;
+    },
+
+    // Check payment status for a billing
+    checkPaymentStatus: async (billingId) => {
+        const response = await api.get(`/tagihan/${billingId}`);
         return response.data;
     },
 };

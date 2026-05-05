@@ -78,9 +78,10 @@ export const useBillingStore = create((set, get) => ({
     },
 
     // Create Midtrans payment
-    createPayment: async (billingId) => {
+    // options: { source: 'admin' | 'tenant' }
+    createPayment: async (billingId, options = {}) => {
         try {
-            const response = await billingService.createPayment(billingId);
+            const response = await billingService.createPayment(billingId, options);
             return { success: true, data: response.data };
         } catch (error) {
             return { success: false, error: error.response?.data?.message || error.message };

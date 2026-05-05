@@ -13,6 +13,8 @@ import Kamar from './pages/Kamar';
 
 import Penghuni from './pages/Penghuni';
 import Tagihan from './pages/Tagihan';
+import PaymentStatus from './pages/PaymentStatus/PaymentStatus';
+import PaymentStatusPublic from './pages/PaymentStatusPublic/PaymentStatusPublic';
 import Pengaturan from './pages/Pengaturan';
 import Reminder from './pages/Reminder';
 import MonitorKamera from './pages/MonitorKamera';
@@ -96,6 +98,10 @@ function App() {
           {/* User Dashboard Routes (Mobile Only View) */}
           <Route path="/user/login" element={<UserLoginOTP />} />
           <Route path="/user/dashboard" element={<DashboardUser />} />
+
+          {/* Payment Status Pages (Public) */}
+          <Route path="/payment-status" element={<PaymentStatus />} />
+          <Route path="/payment-status-public" element={<PaymentStatusPublic />} />
 
           {/* Catch all - redirect to dashboard */}
           <Route path="*" element={<Navigate to="/" replace />} />
