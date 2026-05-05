@@ -58,6 +58,34 @@ const Penghuni = () => {
         telegram_chat_id: '',
     });
 
+    const [errors, setErrors] = useState({});
+
+    const validateForm = (form) => {
+        const newErrors = {};
+        if (!form.nama_penghuni.trim()) {
+            newErrors.nama_penghuni = 'Nama lengkap wajib diisi';
+        }
+        
+        if (!form.nomor_kontak.trim()) {
+            newErrors.nomor_kontak = 'No WhatsApp wajib diisi';
+        } else if (!/^\d+$/.test(form.nomor_kontak)) {
+            newErrors.nomor_kontak = 'No WhatsApp harus berupa angka';
+        } else if (form.nomor_kontak.length < 10) {
+            newErrors.nomor_kontak = 'No WhatsApp minimal 10 digit';
+        }
+
+        if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+            newErrors.email = 'Format email tidak valid';
+        }
+
+        if (form.no_ktp && (!/^\d{16}$/.test(form.no_ktp))) {
+            newErrors.no_ktp = 'No KTP harus 16 digit angka';
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     useEffect(() => {
         fetchTenants();
         fetchRooms();
@@ -84,6 +112,7 @@ const Penghuni = () => {
             tanggal_masuk: new Date().toISOString().split('T')[0],
             telegram_chat_id: '',
         });
+        setErrors({});
         setIsAddModalOpen(true);
     };
 
@@ -102,6 +131,7 @@ const Penghuni = () => {
             kamar_id: tenant.kamar_id ? tenant.kamar_id.toString() : '',
             telegram_chat_id: tenant.telegram_chat_id || '',
         });
+        setErrors({});
         setIsEditModalOpen(true);
     };
 
@@ -111,6 +141,8 @@ const Penghuni = () => {
      * @async
      */
     const handleAddTenant = async () => {
+        if (!validateForm(addForm)) return;
+
         const data = {
             ...addForm,
             kamar_id: parseInt(addForm.kamar_id),
@@ -130,6 +162,8 @@ const Penghuni = () => {
      * @async
      */
     const handleEditTenant = async () => {
+        if (!validateForm(editForm)) return;
+
         const data = {
             ...editForm,
             kamar_id: editForm.kamar_id ? parseInt(editForm.kamar_id) : null,
@@ -357,8 +391,9 @@ const Penghuni = () => {
                                 placeholder="Masukkan nama lengkap"
                                 value={addForm.nama_penghuni}
                                 onChange={(e) => setAddForm({ ...addForm, nama_penghuni: e.target.value })}
-                                className="mt-2"
+                                className={`mt-2 ${errors.nama_penghuni ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                             />
+                            {errors.nama_penghuni && <p className="text-red-500 text-xs mt-1">{errors.nama_penghuni}</p>}
                         </div>
 
                         <div>
@@ -368,8 +403,9 @@ const Penghuni = () => {
                                 placeholder="08xxxxxxxxxx"
                                 value={addForm.nomor_kontak}
                                 onChange={(e) => setAddForm({ ...addForm, nomor_kontak: e.target.value })}
-                                className="mt-2"
+                                className={`mt-2 ${errors.nomor_kontak ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                             />
+                            {errors.nomor_kontak && <p className="text-red-500 text-xs mt-1">{errors.nomor_kontak}</p>}
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
@@ -381,8 +417,9 @@ const Penghuni = () => {
                                     placeholder="email@example.com"
                                     value={addForm.email}
                                     onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
-                                    className="mt-2"
+                                    className={`mt-2 ${errors.email ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                                 />
+                                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
                             </div>
 
                             <div>
@@ -392,8 +429,9 @@ const Penghuni = () => {
                                     placeholder="16 digit"
                                     value={addForm.no_ktp}
                                     onChange={(e) => setAddForm({ ...addForm, no_ktp: e.target.value })}
-                                    className="mt-2"
+                                    className={`mt-2 ${errors.no_ktp ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                                 />
+                                {errors.no_ktp && <p className="text-red-500 text-xs mt-1">{errors.no_ktp}</p>}
                             </div>
                         </div>
 
@@ -453,8 +491,9 @@ const Penghuni = () => {
                                 placeholder="Masukkan nama lengkap"
                                 value={editForm.nama_penghuni}
                                 onChange={(e) => setEditForm({ ...editForm, nama_penghuni: e.target.value })}
-                                className="mt-2"
+                                className={`mt-2 ${errors.nama_penghuni ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                             />
+                            {errors.nama_penghuni && <p className="text-red-500 text-xs mt-1">{errors.nama_penghuni}</p>}
                         </div>
 
                         <div>
@@ -464,8 +503,9 @@ const Penghuni = () => {
                                 placeholder="08xxxxxxxxxx"
                                 value={editForm.nomor_kontak}
                                 onChange={(e) => setEditForm({ ...editForm, nomor_kontak: e.target.value })}
-                                className="mt-2"
+                                className={`mt-2 ${errors.nomor_kontak ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                             />
+                            {errors.nomor_kontak && <p className="text-red-500 text-xs mt-1">{errors.nomor_kontak}</p>}
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
@@ -477,8 +517,9 @@ const Penghuni = () => {
                                     placeholder="email@example.com"
                                     value={editForm.email}
                                     onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                                    className="mt-2"
+                                    className={`mt-2 ${errors.email ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                                 />
+                                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
                             </div>
 
                             <div>
@@ -488,8 +529,9 @@ const Penghuni = () => {
                                     placeholder="16 digit"
                                     value={editForm.no_ktp}
                                     onChange={(e) => setEditForm({ ...editForm, no_ktp: e.target.value })}
-                                    className="mt-2"
+                                    className={`mt-2 ${errors.no_ktp ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                                 />
+                                {errors.no_ktp && <p className="text-red-500 text-xs mt-1">{errors.no_ktp}</p>}
                             </div>
                         </div>
 

@@ -40,6 +40,22 @@ const Kamar = () => {
         harga_per_bulan: '',
     });
 
+    const [errors, setErrors] = useState({});
+
+    const validateForm = (form) => {
+        const newErrors = {};
+        if (!form.nomor_kamar.trim()) {
+            newErrors.nomor_kamar = 'Nomor kamar wajib diisi';
+        }
+        if (!form.harga_per_bulan) {
+            newErrors.harga_per_bulan = 'Harga per bulan wajib diisi';
+        } else if (parseInt(form.harga_per_bulan) <= 0) {
+            newErrors.harga_per_bulan = 'Harga harus lebih dari 0';
+        }
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     useEffect(() => {
         fetchRooms();
     }, []);
@@ -53,6 +69,7 @@ const Kamar = () => {
             tipe_kamar: 'Standard',
             harga_per_bulan: '',
         });
+        setErrors({});
         setIsAddModalOpen(true);
     };
 
@@ -68,6 +85,7 @@ const Kamar = () => {
             tipe_kamar: room.tipe_kamar,
             harga_per_bulan: room.harga_per_bulan.toString(),
         });
+        setErrors({});
         setIsEditModalOpen(true);
     };
 
@@ -78,6 +96,8 @@ const Kamar = () => {
      * @async
      */
     const handleAddRoom = async () => {
+        if (!validateForm(addForm)) return;
+
         const data = {
             ...addForm,
             harga_per_bulan: parseInt(addForm.harga_per_bulan),
@@ -98,6 +118,8 @@ const Kamar = () => {
      * @async
      */
     const handleEditRoom = async () => {
+        if (!validateForm(editForm)) return;
+
         const data = {
             ...editForm,
             harga_per_bulan: parseInt(editForm.harga_per_bulan),
@@ -231,8 +253,9 @@ const Kamar = () => {
                                 placeholder="Contoh: Kamar 01"
                                 value={addForm.nomor_kamar}
                                 onChange={(e) => setAddForm({ ...addForm, nomor_kamar: e.target.value })}
-                                className="mt-2"
+                                className={`mt-2 ${errors.nomor_kamar ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                             />
+                            {errors.nomor_kamar && <p className="text-red-500 text-xs mt-1">{errors.nomor_kamar}</p>}
                         </div>
 
                         <div>
@@ -257,8 +280,9 @@ const Kamar = () => {
                                 placeholder="800000"
                                 value={addForm.harga_per_bulan}
                                 onChange={(e) => setAddForm({ ...addForm, harga_per_bulan: e.target.value })}
-                                className="mt-2"
+                                className={`mt-2 ${errors.harga_per_bulan ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                             />
+                            {errors.harga_per_bulan && <p className="text-red-500 text-xs mt-1">{errors.harga_per_bulan}</p>}
                         </div>
                     </div>
 
@@ -288,8 +312,9 @@ const Kamar = () => {
                                 placeholder="Contoh: Kamar 01"
                                 value={editForm.nomor_kamar}
                                 onChange={(e) => setEditForm({ ...editForm, nomor_kamar: e.target.value })}
-                                className="mt-2"
+                                className={`mt-2 ${errors.nomor_kamar ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                             />
+                            {errors.nomor_kamar && <p className="text-red-500 text-xs mt-1">{errors.nomor_kamar}</p>}
                         </div>
 
                         <div>
@@ -314,8 +339,9 @@ const Kamar = () => {
                                 placeholder="800000"
                                 value={editForm.harga_per_bulan}
                                 onChange={(e) => setEditForm({ ...editForm, harga_per_bulan: e.target.value })}
-                                className="mt-2"
+                                className={`mt-2 ${errors.harga_per_bulan ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                             />
+                            {errors.harga_per_bulan && <p className="text-red-500 text-xs mt-1">{errors.harga_per_bulan}</p>}
                         </div>
                     </div>
 

@@ -41,7 +41,22 @@ const Reminder = () => {
         pesan_custom: '',
         aktif: true,
     });
+    const [errors, setErrors] = useState({});
     const [testingId, setTestingId] = useState(null);
+
+    const validateForm = (formData) => {
+        const newErrors = {};
+        if (formData.hari_sebelum_jatuh_tempo === '') {
+            newErrors.hari_sebelum_jatuh_tempo = 'Hari wajib diisi';
+        } else {
+            const hari = parseInt(formData.hari_sebelum_jatuh_tempo);
+            if (isNaN(hari) || hari < 0 || hari > 30) {
+                newErrors.hari_sebelum_jatuh_tempo = 'Hari harus antara 0 dan 30';
+            }
+        }
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
 
     useEffect(() => {
         fetchTenants();
@@ -89,6 +104,7 @@ const Reminder = () => {
         setIsEditing(false);
         setSelectedReminder(null);
         setForm({ hari_sebelum_jatuh_tempo: '', pesan_custom: '', aktif: true });
+        setErrors({});
         setIsModalOpen(true);
     };
 
@@ -107,6 +123,7 @@ const Reminder = () => {
             pesan_custom: reminder.pesan_custom || '',
             aktif: reminder.aktif,
         });
+        setErrors({});
         setIsModalOpen(true);
     };
 
@@ -117,10 +134,7 @@ const Reminder = () => {
      * @async
      */
     const handleSubmit = async () => {
-        if (!form.hari_sebelum_jatuh_tempo) {
-            toast.error({ title: 'Error', description: 'Hari sebelum jatuh tempo wajib diisi' });
-            return;
-        }
+        if (!validateForm(form)) return;
 
         const data = {
             penghuni_id: selectedTenant.id,
@@ -352,8 +366,9 @@ const Reminder = () => {
                                 placeholder="Contoh: 5 (untuk H-5)"
                                 value={form.hari_sebelum_jatuh_tempo}
                                 onChange={(e) => setForm({ ...form, hari_sebelum_jatuh_tempo: e.target.value })}
-                                className="mt-2"
+                                className={`mt-2 ${errors.hari_sebelum_jatuh_tempo ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                             />
+                            {errors.hari_sebelum_jatuh_tempo && <p className="text-red-500 text-xs mt-1">{errors.hari_sebelum_jatuh_tempo}</p>}
                             <p className="text-xs text-gray-400 mt-1">
                                 0 = hari jatuh tempo, 1 = H-1, 3 = H-3, dst.
                             </p>

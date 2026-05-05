@@ -1,9 +1,5 @@
 import { create } from 'zustand';
 import billingService from '../services/billingService';
-import { dummyBillings } from '../utils/dummyData';
-
-// Flag untuk menggunakan mock data
-const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === 'true' || true; // Default true untuk demo
 
 export const useBillingStore = create((set, get) => ({
     billings: [],
@@ -14,17 +10,10 @@ export const useBillingStore = create((set, get) => ({
     fetchBillings: async () => {
         set({ isLoading: true, error: null });
         try {
-                if (USE_MOCK_DATA) {
-                    // Simulate API delay
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                    set({ billings: dummyBillings, isLoading: false });
-                } else {
-                    const response = await billingService.getAll();
-                    set({ billings: response.data || [], isLoading: false });
-                }
+            const response = await billingService.getAll();
+            set({ billings: response.data || [], isLoading: false });
         } catch (error) {
-                // Fallback ke dummy data jika error
-                set({ billings: dummyBillings, error: error.response?.data?.message || error.message, isLoading: false });
+            set({ billings: [], error: error.response?.data?.message || error.message, isLoading: false });
         }
     },
 

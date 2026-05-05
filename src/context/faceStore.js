@@ -1,9 +1,5 @@
 import { create } from 'zustand';
 import faceService from '../services/faceService';
-import { dummyAccessLogs, dummyFaceNotifications } from '../utils/dummyData';
-
-// Flag untuk menggunakan mock data
-const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === 'true' || true; // Default true untuk demo
 
 export const useFaceStore = create((set, get) => ({
   logs: [],
@@ -17,17 +13,11 @@ export const useFaceStore = create((set, get) => ({
   fetchLogs: async (params = {}) => {
     set({ isLoading: true, error: null });
     try {
-        if (USE_MOCK_DATA) {
-          // Simulate API delay
-          await new Promise(resolve => setTimeout(resolve, 500));
-          set({ logs: dummyAccessLogs, isLoading: false });
-        } else {
-          const response = await faceService.getLogs(params);
-          set({ logs: response.data, isLoading: false });
-        }
+        const response = await faceService.getLogs(params);
+        set({ logs: response.data, isLoading: false });
     } catch (error) {
         const message = error.response?.data?.message || 'Gagal memuat log akses';
-        set({ logs: dummyAccessLogs, error: message, isLoading: false });
+        set({ logs: [], error: message, isLoading: false });
     }
   },
 
@@ -35,17 +25,11 @@ export const useFaceStore = create((set, get) => ({
   fetchNotifications: async () => {
     set({ isLoading: true, error: null });
     try {
-        if (USE_MOCK_DATA) {
-          // Simulate API delay
-          await new Promise(resolve => setTimeout(resolve, 500));
-          set({ notifications: dummyFaceNotifications, isLoading: false });
-        } else {
-          const response = await faceService.getNotifications();
-          set({ notifications: response.data, isLoading: false });
-        }
+        const response = await faceService.getNotifications();
+        set({ notifications: response.data, isLoading: false });
     } catch (error) {
         const message = error.response?.data?.message || 'Gagal memuat notifikasi';
-        set({ notifications: dummyFaceNotifications, error: message, isLoading: false });
+        set({ notifications: [], error: message, isLoading: false });
     }
   },
 
