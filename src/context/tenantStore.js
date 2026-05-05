@@ -1,6 +1,10 @@
 import { create } from 'zustand';
 import tenantService from '../services/tenantService';
 import { useRoomStore } from './roomStore';
+import { dummyTenants } from '../utils/dummyData';
+
+// Flag untuk menggunakan mock data (set ke true untuk testing)
+const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === 'true' || true; // Default true untuk demo
 
 export const useTenantStore = create((set, get) => ({
     tenants: [],
@@ -11,11 +15,18 @@ export const useTenantStore = create((set, get) => ({
     fetchTenants: async () => {
         set({ isLoading: true, error: null });
         try {
-            const response = await tenantService.getAll();
-            set({ tenants: response.data, isLoading: false });
+            if (USE_MOCK_DATA) {
+                // Simulate API delay
+                await new Promise(resolve => setTimeout(resolve, 500));
+                set({ tenants: dummyTenants, isLoading: false });
+            } else {
+                const response = await tenantService.getAll();
+                set({ tenants: response.data, isLoading: false });
+            }
         } catch (error) {
+            // Fallback ke dummy data jika error
             const message = error.response?.data?.message || 'Gagal memuat data penghuni';
-            set({ error: message, isLoading: false });
+            set({ tenants: dummyTenants, error: message, isLoading: false });
         }
     },
 

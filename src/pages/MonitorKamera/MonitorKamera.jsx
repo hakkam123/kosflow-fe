@@ -22,6 +22,24 @@ const MonitorKamera = () => {
   const [stream, setStream] = useState(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [detectionActive, setDetectionActive] = useState(false);
+
+  // Refs for "live" state to avoid stale closures in async loops
+  const streamRef = useRef(null);
+  const cameraActiveRef = useRef(false);
+  const detectionActiveRef = useRef(false);
+
+  // Sync refs with state
+  useEffect(() => {
+    streamRef.current = stream;
+  }, [stream]);
+
+  useEffect(() => {
+    cameraActiveRef.current = cameraActive;
+  }, [cameraActive]);
+
+  useEffect(() => {
+    detectionActiveRef.current = detectionActive;
+  }, [detectionActive]);
   const [detectionInterval, setDetectionInterval] = useState(3);
   const [isDetecting, setIsDetecting] = useState(false);
   const [detectionResults, setDetectionResults] = useState([]);
@@ -43,7 +61,9 @@ const MonitorKamera = () => {
         videoRef.current.srcObject = mediaStream;
       }
       setStream(mediaStream);
+      streamRef.current = mediaStream;
       setCameraActive(true);
+      cameraActiveRef.current = true;
     } catch (err) {
       toast.error({
         title: 'Error',
@@ -56,26 +76,48 @@ const MonitorKamera = () => {
    * Menghentikan akses kamera, membersihkan stream, overlay canvas, dan timer deteksi.
    */
   const stopCamera = useCallback(() => {
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
+    // 1. Stop all tracks from stream state
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => {
+        track.stop();
+        console.log('Track stopped from streamRef');
+      });
     }
-    if (videoRef.current) {
+
+    // 2. Stop all tracks from video element directly (fallback)
+    if (videoRef.current && videoRef.current.srcObject) {
+      const videoStream = videoRef.current.srcObject;
+      if (videoStream.getTracks) {
+        videoStream.getTracks().forEach((track) => {
+          track.stop();
+          console.log('Track stopped from videoRef');
+        });
+      }
       videoRef.current.srcObject = null;
     }
+
     setStream(null);
+    streamRef.current = null;
     setCameraActive(false);
+    cameraActiveRef.current = false;
     setDetectionActive(false);
+    detectionActiveRef.current = false;
 
     // Clear overlay
     if (overlayRef.current) {
-      const ctx = overlayRef.current.getContext('2d');
-      ctx.clearRect(0, 0, overlayRef.current.width, overlayRef.current.height);
+      try {
+        const ctx = overlayRef.current.getContext('2d');
+        ctx.clearRect(0, 0, overlayRef.current.width, overlayRef.current.height);
+      } catch (e) {
+        console.error('Error clearing overlay:', e);
+      }
     }
 
     if (detectionTimerRef.current) {
       clearTimeout(detectionTimerRef.current);
+      detectionTimerRef.current = null;
     }
-  }, [stream]);
+  }, []);
 
   /**
    * Menjalankan proses deteksi wajah dengan mengambil frame dari video,
@@ -84,7 +126,10 @@ const MonitorKamera = () => {
    * @async
    */
   const detectFaces = useCallback(async () => {
-    if (!videoRef.current || !captureRef.current || !detectionActive) return;
+    if (!videoRef.current || !captureRef.current || !detectionActiveRef.current || !cameraActiveRef.current) {
+      setIsDetecting(false);
+      return;
+    }
 
     setIsDetecting(true);
 
@@ -171,19 +216,23 @@ const MonitorKamera = () => {
       setIsDetecting(false);
     }
 
-    // Schedule next detection
-    if (detectionActive) {
+    // Schedule next detection only if still active
+    if (detectionActiveRef.current && cameraActiveRef.current) {
       detectionTimerRef.current = setTimeout(detectFaces, detectionInterval * 1000);
     }
-  }, [detectionActive, detectionInterval, lastDetections, toast, fetchUnreadCount]);
+  }, [detectionInterval, lastDetections, toast, fetchUnreadCount]);
 
   /**
    * Menghidupkan atau mematikan loop deteksi wajah secara periodik.
    */
   const toggleDetection = useCallback(() => {
-    if (detectionActive) {
+    if (detectionActiveRef.current) {
       setDetectionActive(false);
-      if (detectionTimerRef.current) clearTimeout(detectionTimerRef.current);
+      detectionActiveRef.current = false;
+      if (detectionTimerRef.current) {
+        clearTimeout(detectionTimerRef.current);
+        detectionTimerRef.current = null;
+      }
       // Clear overlay
       if (overlayRef.current) {
         const ctx = overlayRef.current.getContext('2d');
@@ -191,18 +240,25 @@ const MonitorKamera = () => {
       }
     } else {
       setDetectionActive(true);
+      detectionActiveRef.current = true;
+      detectFaces();
     }
-  }, [detectionActive]);
+  }, [detectFaces]);
 
   // Start detection loop when activated
   useEffect(() => {
     if (detectionActive && cameraActive) {
-      detectFaces();
+      // Check if already running via ref to avoid multiple loops
+      // but toggleDetection already calls it, so we might not even need this effect
+      // unless cameraActive just became true.
     }
     return () => {
-      if (detectionTimerRef.current) clearTimeout(detectionTimerRef.current);
+      if (detectionTimerRef.current) {
+        clearTimeout(detectionTimerRef.current);
+        detectionTimerRef.current = null;
+      }
     };
-  }, [detectionActive]); // eslint-disable-line
+  }, [detectionActive, cameraActive]);
 
   // Bind stream to video element whenever stream changes
   useEffect(() => {
@@ -214,12 +270,21 @@ const MonitorKamera = () => {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
+      console.log('Unmounting MonitorKamera, stopping tracks...');
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
       }
-      if (detectionTimerRef.current) clearTimeout(detectionTimerRef.current);
+      if (videoRef.current && videoRef.current.srcObject) {
+        const activeStream = videoRef.current.srcObject;
+        if (activeStream.getTracks) {
+          activeStream.getTracks().forEach(track => track.stop());
+        }
+      }
+      if (detectionTimerRef.current) {
+        clearTimeout(detectionTimerRef.current);
+      }
     };
-  }, []); // eslint-disable-line
+  }, []);
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">

@@ -1,5 +1,9 @@
 import { create } from 'zustand';
 import roomService from '../services/roomService';
+import { dummyRooms } from '../utils/dummyData';
+
+// Flag untuk menggunakan mock data (set ke true untuk testing)
+const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === 'true' || true; // Default true untuk demo
 
 export const useRoomStore = create((set, get) => ({
     rooms: [],
@@ -10,11 +14,18 @@ export const useRoomStore = create((set, get) => ({
     fetchRooms: async () => {
         set({ isLoading: true, error: null });
         try {
-            const response = await roomService.getAll();
-            set({ rooms: response.data, isLoading: false });
+            if (USE_MOCK_DATA) {
+                // Simulate API delay
+                await new Promise(resolve => setTimeout(resolve, 500));
+                set({ rooms: dummyRooms, isLoading: false });
+            } else {
+                const response = await roomService.getAll();
+                set({ rooms: response.data, isLoading: false });
+            }
         } catch (error) {
+            // Fallback ke dummy data jika error
             const message = error.response?.data?.message || 'Gagal memuat data kamar';
-            set({ error: message, isLoading: false });
+            set({ rooms: dummyRooms, error: message, isLoading: false });
         }
     },
 

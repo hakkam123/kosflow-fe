@@ -81,7 +81,6 @@ const Sidebar = () => {
                 {!collapsed && (
                     <div className="overflow-hidden">
                         <h1 className="text-white font-bold text-lg leading-tight">{APP_NAME}</h1>
-                        <p className="text-xs text-gray-500">Billing Automation</p>
                     </div>
                 )}
             </div>
