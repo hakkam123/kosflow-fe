@@ -26,7 +26,7 @@ const menuItems = [
     { path: '/monitor-kamera', label: 'Monitor Kamera', icon: Camera },
     { path: '/log-akses', label: 'Log Akses', icon: ClipboardList },
     { path: '/notifikasi-face', label: 'Notifikasi Wajah', icon: ShieldAlert },
-    { path: '/pengaturan', label: 'Pengaturan', icon: Settings },
+    // { path: '/pengaturan', label: 'Pengaturan', icon: Settings },
 ];
 
 const Sidebar = () => {
