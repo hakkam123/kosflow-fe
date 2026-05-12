@@ -1,32 +1,45 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { MainLayout } from './layouts';
-import { useAuthStore } from './context';
-import { ToastProvider } from '@/components/ui/toast';
+import React from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { MainLayout } from "./layouts";
+import { useAuthStore } from "./context";
+import { ToastProvider } from "@/components/ui/toast";
 
 // Pages
-import Login from './pages/Login';
-import VerifyEmail from './pages/VerifyEmail';
-import Dashboard from './pages/Dashboard';
-import Kamar from './pages/Kamar';
+import Login from "./pages/Login";
+import VerifyEmail from "./pages/VerifyEmail";
+import Dashboard from "./pages/Dashboard";
+import Kamar from "./pages/Kamar";
 
-import Penghuni from './pages/Penghuni';
-import Tagihan from './pages/Tagihan';
-import PaymentStatus from './pages/PaymentStatus/PaymentStatus';
-import PaymentStatusPublic from './pages/PaymentStatusPublic/PaymentStatusPublic';
-import Pengaturan from './pages/Pengaturan';
-import Reminder from './pages/Reminder';
-import MonitorKamera from './pages/MonitorKamera';
-import LogAkses from './pages/LogAkses';
-import NotifikasiFace from './pages/NotifikasiFace';
-import { UserLoginOTP, DashboardUser } from './pages/DashboardUser';
+import Penghuni from "./pages/Penghuni";
+import Tagihan from "./pages/Tagihan";
+import PaymentStatus from "./pages/PaymentStatus/PaymentStatus";
+import PaymentStatusPublic from "./pages/PaymentStatusPublic/PaymentStatusPublic";
+import Pengaturan from "./pages/Pengaturan";
+import Reminder from "./pages/Reminder";
+import MonitorKamera from "./pages/MonitorKamera";
+import LogAkses from "./pages/LogAkses";
+import NotifikasiFace from "./pages/NotifikasiFace";
+import { UserLoginOTP, DashboardUser } from "./pages/DashboardUser";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuthStore();
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{
+          flashAlert: {
+            variant: "warning",
+            title: "Anda perlu login",
+            description:
+              "Silakan login kembali untuk membuka dashboard dan melanjutkan aktivitas Anda.",
+          },
+        }}
+      />
+    );
   }
 
   return children;
@@ -92,7 +105,10 @@ function App() {
 
           {/* Payment Status Pages (Public) */}
           <Route path="/payment-status" element={<PaymentStatus />} />
-          <Route path="/payment-status-public" element={<PaymentStatusPublic />} />
+          <Route
+            path="/payment-status-public"
+            element={<PaymentStatusPublic />}
+          />
 
           {/* Catch all - redirect to dashboard */}
           <Route path="*" element={<Navigate to="/" replace />} />

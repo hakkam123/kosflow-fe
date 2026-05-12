@@ -1,14 +1,15 @@
 import axios from "axios";
 import { API_BASE_URL } from "../config/constants";
+import { setFlashAlert } from "../utils/flashAlert";
 
 // Create axios instance with default config (with auth)
 const api = axios.create({
-    baseURL: API_BASE_URL,
-    headers: {
-        'Content-Type': 'application/json',
-        'ngrok-skip-browser-warning': 'true',
-    },
-    timeout: 10000,
+  baseURL: API_BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+    "ngrok-skip-browser-warning": "true",
+  },
+  timeout: 10000,
 });
 
 // Create axios instance for public endpoints (without auth redirect)
@@ -42,6 +43,12 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       // Token expired or invalid - clear auth and redirect
       localStorage.removeItem("kosflow-auth");
+      setFlashAlert({
+        variant: "warning",
+        title: "Sesi berakhir",
+        description:
+          "Sesi Anda sudah habis atau token tidak valid. Silakan login kembali untuk melanjutkan.",
+      });
       window.location.href = "/login";
     }
     return Promise.reject(error);
