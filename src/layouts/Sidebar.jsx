@@ -26,7 +26,7 @@ const menuItems = [
     { path: '/monitor-kamera', label: 'Monitor Kamera', icon: Camera },
     { path: '/log-akses', label: 'Log Akses', icon: ClipboardList },
     { path: '/notifikasi-face', label: 'Notifikasi Wajah', icon: ShieldAlert },
-    { path: '/pengaturan', label: 'Pengaturan', icon: Settings },
+    // { path: '/pengaturan', label: 'Pengaturan', icon: Settings },
 ];
 
 const Sidebar = () => {
@@ -81,7 +81,6 @@ const Sidebar = () => {
                 {!collapsed && (
                     <div className="overflow-hidden">
                         <h1 className="text-white font-bold text-lg leading-tight">{APP_NAME}</h1>
-                        <p className="text-xs text-gray-500">Billing Automation</p>
                     </div>
                 )}
             </div>

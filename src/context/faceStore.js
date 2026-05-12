@@ -13,11 +13,11 @@ export const useFaceStore = create((set, get) => ({
   fetchLogs: async (params = {}) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await faceService.getLogs(params);
-      set({ logs: response.data, isLoading: false });
+        const response = await faceService.getLogs(params);
+        set({ logs: response.data, isLoading: false });
     } catch (error) {
-      const message = error.response?.data?.message || 'Gagal memuat log akses';
-      set({ error: message, isLoading: false });
+        const message = error.response?.data?.message || 'Gagal memuat log akses';
+        set({ logs: [], error: message, isLoading: false });
     }
   },
 
@@ -25,11 +25,11 @@ export const useFaceStore = create((set, get) => ({
   fetchNotifications: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = await faceService.getNotifications();
-      set({ notifications: response.data, isLoading: false });
+        const response = await faceService.getNotifications();
+        set({ notifications: response.data, isLoading: false });
     } catch (error) {
-      const message = error.response?.data?.message || 'Gagal memuat notifikasi';
-      set({ error: message, isLoading: false });
+        const message = error.response?.data?.message || 'Gagal memuat notifikasi';
+        set({ notifications: [], error: message, isLoading: false });
     }
   },
 

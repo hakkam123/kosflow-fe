@@ -1,16 +1,24 @@
-# React + Vite
+# KosFlow Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend aplikasi manajemen kos-kosan KosFlow.
 
-Currently, two official plugins are available:
+## Konfigurasi API (Penting!)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Aplikasi ini sudah diatur untuk terhubung **100% langsung ke backend API** tanpa menggunakan *mock/dummy data* lagi. Semua file dan *logic mock data* lama telah sepenuhnya dihapus dari *source code*.
 
-## React Compiler
+### Menghubungkan ke API Ngrok
+Untuk mengatur URL tujuan API (misal menggunakan Ngrok saat *development*), ubah URL pada file `.env` di *root* folder proyek ini:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```env
+VITE_API_URL=https://<alamat-ngrok-anda>.ngrok-free.dev/api
+```
 
-## Expanding the ESLint configuration
+> [!WARNING]
+> Setiap kali Anda mengubah file `.env`, Anda wajib **menghentikan server Vite (`Ctrl+C`)** dan menjalankannya kembali dengan perintah `npm run dev`.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Mengapa GET Request Gagal/CORS Error di Ngrok?
+Jika Anda menggunakan **Ngrok versi gratis**, Ngrok biasanya akan menampilkan "Browser Warning Page" untuk *request* berjenis `GET`. Karena halaman *warning* ini berupa HTML (bukan JSON) dan tidak memiliki *header* CORS, maka *request* dari *frontend* akan ditolak (*Blocked by CORS* / warna merah di Network Tab).
+Sedangkan *request* `POST`, `PUT`, dan `DELETE` biasanya secara otomatis dibiarkan lewat oleh Ngrok tanpa menampilkan *warning*. 
+
+> [!TIP]
+> **Solusi:** Kami sudah menyematkan *header* `ngrok-skip-browser-warning: true` ke dalam konfigurasi Axios (`src/services/api.js`). Dengan *header* ini, API akan secara otomatis mengabaikan halaman peringatan Ngrok dan langsung mendapatkan data JSON dari *backend*, menyelesaikan masalah gagal *fetch* pada daftar kamar/penghuni.

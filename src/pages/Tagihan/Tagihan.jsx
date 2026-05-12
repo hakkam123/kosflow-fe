@@ -18,6 +18,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatDate } from '@/utils/formatDate';
 
+/**
+ * Komponen Tagihan - Halaman manajemen keuangan dan tagihan bulanan kos.
+ * Memungkinkan admin untuk melihat statistik, membuat tagihan manual/otomatis, memanage status lunas,
+ * dan terintegrasi dengan Payment Gateway (Midtrans).
+ * 
+ * @returns {JSX.Element} Halaman Manajemen Tagihan.
+ */
 const Tagihan = () => {
     const { toast } = useToast();
     const navigate = useNavigate();
@@ -50,6 +57,31 @@ const Tagihan = () => {
         periode: '',
     });
 
+    const [generateErrors, setGenerateErrors] = useState({});
+    const [manualErrors, setManualErrors] = useState({});
+
+    const validateGenerateForm = () => {
+        const errors = {};
+        if (!generateForm.periode) errors.periode = 'Periode wajib diisi';
+        if (!generateForm.tanggalJatuhTempo) errors.tanggalJatuhTempo = 'Tanggal jatuh tempo wajib diisi';
+        setGenerateErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
+    const validateManualForm = () => {
+        const errors = {};
+        if (!manualForm.penghuni) errors.penghuni = 'Penghuni wajib dipilih';
+        if (!manualForm.jumlah) {
+            errors.jumlah = 'Jumlah wajib diisi';
+        } else if (parseInt(manualForm.jumlah) <= 0) {
+            errors.jumlah = 'Jumlah harus lebih dari 0';
+        }
+        if (!manualForm.jatuhTempo) errors.jatuhTempo = 'Tanggal jatuh tempo wajib diisi';
+        if (!manualForm.periode) errors.periode = 'Periode wajib diisi';
+        setManualErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
     useEffect(() => {
         fetchBillings();
         fetchTenants();
@@ -58,10 +90,21 @@ const Tagihan = () => {
         checkOverdue();
     }, []);
 
-    // Helper: get tenant/room from billing association data (from API) or fallback
+    /**
+     * Mendapatkan nama penghuni dari relasi data tagihan.
+     * 
+     * @param {Object} billing - Objek data tagihan.
+     * @returns {string} Nama penghuni atau 'Unknown'.
+     */
     const getTenantName = (billing) => {
         return billing.tenant?.nama_penghuni || 'Unknown';
     };
+    /**
+     * Mendapatkan nomor kamar dari relasi data tagihan.
+     * 
+     * @param {Object} billing - Objek data tagihan.
+     * @returns {string} Nomor kamar atau '-'.
+     */
     const getRoomNumber = (billing) => {
         return billing.tenant?.room?.nomor_kamar || '-';
     };
@@ -82,11 +125,13 @@ const Tagihan = () => {
         return true;
     });
 
+    /**
+     * Memproses request untuk menggenerate tagihan secara otomatis bagi semua penghuni aktif.
+     * 
+     * @async
+     */
     const handleGenerateOtomatis = async () => {
-        if (!generateForm.periode || !generateForm.tanggalJatuhTempo) {
-            toast.error({ title: 'Error', description: 'Periode dan tanggal jatuh tempo wajib diisi' });
-            return;
-        }
+        if (!validateGenerateForm()) return;
         const result = await generateBillings({
             bulan_tagihan: generateForm.periode,
             tanggal_jatuh_tempo: generateForm.tanggalJatuhTempo,
@@ -103,11 +148,13 @@ const Tagihan = () => {
         }
     };
 
+    /**
+     * Menangani proses penambahan tagihan baru secara manual untuk satu penghuni.
+     * 
+     * @async
+     */
     const handleTambahManual = async () => {
-        if (!manualForm.penghuni || !manualForm.jumlah || !manualForm.jatuhTempo || !manualForm.periode) {
-            toast.error({ title: 'Error', description: 'Semua field wajib diisi' });
-            return;
-        }
+        if (!validateManualForm()) return;
         const result = await createBilling({
             penghuni_id: parseInt(manualForm.penghuni),
             total_tagihan: parseInt(manualForm.jumlah),
@@ -126,6 +173,11 @@ const Tagihan = () => {
         }
     };
 
+    /**
+     * Menangani proses penghapusan data tagihan secara spesifik.
+     * 
+     * @async
+     */
     const handleDelete = async () => {
         if (!selectedBilling) return;
         const result = await deleteBilling(selectedBilling.id);
@@ -138,6 +190,12 @@ const Tagihan = () => {
         setSelectedBilling(null);
     };
 
+    /**
+     * Menandai status tagihan menjadi Lunas secara manual.
+     * 
+     * @async
+     * @param {Object} billing - Objek data tagihan.
+     */
     const handleMarkPaid = async (billing) => {
         const result = await updateBilling(billing.id, { status_tagihan: 'Lunas' });
         if (result.success) {
@@ -147,6 +205,12 @@ const Tagihan = () => {
         }
     };
 
+    /**
+     * Meminta Midtrans payment URL dari server dan membuka halaman pembayaran.
+     * 
+     * @async
+     * @param {Object} billing - Objek data tagihan yang akan dibayar.
+     */
     const handlePayMidtrans = async (billing) => {
         const result = await createPayment(billing.id, { source: 'admin' });
         if (result.success && result.data?.payment_url) {
@@ -171,6 +235,12 @@ const Tagihan = () => {
         }
     };
 
+    /**
+     * Mendapatkan kelas Tailwind (warna latar dan teks) sesuai status tagihan.
+     * 
+     * @param {string} status - Status tagihan (Lunas, Terlambat, dll).
+     * @returns {string} Kelas Tailwind.
+     */
     const getStatusBadge = (status) => {
         switch (status) {
             case 'Lunas':
@@ -182,6 +252,12 @@ const Tagihan = () => {
         }
     };
 
+    /**
+     * Mendapatkan label tampilan standar sesuai status tagihan.
+     * 
+     * @param {string} status - Status tagihan.
+     * @returns {string} Label status format tampilan UI.
+     */
     const getStatusLabel = (status) => {
         switch (status) {
             case 'Lunas':
@@ -304,14 +380,22 @@ const Tagihan = () => {
                 </div>
                 <div className="flex gap-3">
                     <button
-                        onClick={() => setIsGenerateModalOpen(true)}
+                        onClick={() => {
+                            setGenerateForm({ periode: '', tanggalJatuhTempo: '' });
+                            setGenerateErrors({});
+                            setIsGenerateModalOpen(true);
+                        }}
                         className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium transition-all"
                     >
                         <Sparkles className="h-4 w-4" />
                         Generate Otomatis
                     </button>
                     <button
-                        onClick={() => setIsManualModalOpen(true)}
+                        onClick={() => {
+                            setManualForm({ penghuni: '', jumlah: '', jatuhTempo: '', periode: '' });
+                            setManualErrors({});
+                            setIsManualModalOpen(true);
+                        }}
                         className="flex items-center gap-2 px-4 py-2.5 bg-[#059669] hover:bg-[#047857] text-white rounded-lg text-sm font-medium transition-all"
                     >
                         <Plus className="h-4 w-4" />
@@ -516,8 +600,9 @@ const Tagihan = () => {
                                 type="month"
                                 value={generateForm.periode}
                                 onChange={(e) => setGenerateForm({ ...generateForm, periode: e.target.value })}
-                                className="mt-2"
+                                className={`mt-2 ${generateErrors.periode ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                             />
+                            {generateErrors.periode && <p className="text-red-500 text-xs mt-1">{generateErrors.periode}</p>}
                         </div>
 
                         <div>
@@ -527,8 +612,9 @@ const Tagihan = () => {
                                 type="date"
                                 value={generateForm.tanggalJatuhTempo}
                                 onChange={(e) => setGenerateForm({ ...generateForm, tanggalJatuhTempo: e.target.value })}
-                                className="mt-2"
+                                className={`mt-2 ${generateErrors.tanggalJatuhTempo ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                             />
+                            {generateErrors.tanggalJatuhTempo && <p className="text-red-500 text-xs mt-1">{generateErrors.tanggalJatuhTempo}</p>}
                         </div>
 
                         <p className="text-sm text-gray-500">
@@ -572,7 +658,7 @@ const Tagihan = () => {
                                         }
                                     }
                                 }}
-                                className="mt-2 block w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-[#059669] transition-all"
+                                className={`mt-2 block w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-[#059669] transition-all ${manualErrors.penghuni ? 'border-red-500 ring-red-500' : ''}`}
                             >
                                 <option value="">Pilih Penghuni</option>
                                 {tenants.map((tenant) => {
@@ -584,6 +670,7 @@ const Tagihan = () => {
                                     );
                                 })}
                             </select>
+                            {manualErrors.penghuni && <p className="text-red-500 text-xs mt-1">{manualErrors.penghuni}</p>}
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
@@ -595,8 +682,9 @@ const Tagihan = () => {
                                     placeholder="800000"
                                     value={manualForm.jumlah}
                                     onChange={(e) => setManualForm({ ...manualForm, jumlah: e.target.value })}
-                                    className="mt-2"
+                                    className={`mt-2 ${manualErrors.jumlah ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                                 />
+                                {manualErrors.jumlah && <p className="text-red-500 text-xs mt-1">{manualErrors.jumlah}</p>}
                             </div>
 
                             <div>
@@ -606,8 +694,9 @@ const Tagihan = () => {
                                     type="date"
                                     value={manualForm.jatuhTempo}
                                     onChange={(e) => setManualForm({ ...manualForm, jatuhTempo: e.target.value })}
-                                    className="mt-2"
+                                    className={`mt-2 ${manualErrors.jatuhTempo ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                                 />
+                                {manualErrors.jatuhTempo && <p className="text-red-500 text-xs mt-1">{manualErrors.jatuhTempo}</p>}
                             </div>
                         </div>
 
@@ -618,8 +707,9 @@ const Tagihan = () => {
                                 type="month"
                                 value={manualForm.periode}
                                 onChange={(e) => setManualForm({ ...manualForm, periode: e.target.value })}
-                                className="mt-2"
+                                className={`mt-2 ${manualErrors.periode ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                             />
+                            {manualErrors.periode && <p className="text-red-500 text-xs mt-1">{manualErrors.periode}</p>}
                         </div>
                     </div>
 

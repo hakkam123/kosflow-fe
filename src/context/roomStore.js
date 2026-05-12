@@ -14,7 +14,7 @@ export const useRoomStore = create((set, get) => ({
             set({ rooms: response.data, isLoading: false });
         } catch (error) {
             const message = error.response?.data?.message || 'Gagal memuat data kamar';
-            set({ error: message, isLoading: false });
+            set({ rooms: [], error: message, isLoading: false });
         }
     },
 

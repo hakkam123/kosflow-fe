@@ -14,6 +14,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatRupiah } from '../../utils/formatRupiah';
 
+/**
+ * Komponen Kamar - Halaman pengelolaan data kamar oleh admin.
+ * Memungkinkan admin untuk melihat daftar kamar, menambah kamar baru, mengedit, dan menghapus kamar.
+ * 
+ * @returns {JSX.Element} Halaman Manajemen Kamar.
+ */
 const Kamar = () => {
     const { toast } = useToast();
     const { rooms, fetchRooms, addRoom, updateRoom, deleteRoom, isLoading } = useRoomStore();
@@ -34,19 +40,44 @@ const Kamar = () => {
         harga_per_bulan: '',
     });
 
+    const [errors, setErrors] = useState({});
+
+    const validateForm = (form) => {
+        const newErrors = {};
+        if (!form.nomor_kamar.trim()) {
+            newErrors.nomor_kamar = 'Nomor kamar wajib diisi';
+        }
+        if (!form.harga_per_bulan) {
+            newErrors.harga_per_bulan = 'Harga per bulan wajib diisi';
+        } else if (parseInt(form.harga_per_bulan) <= 0) {
+            newErrors.harga_per_bulan = 'Harga harus lebih dari 0';
+        }
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     useEffect(() => {
         fetchRooms();
     }, []);
 
+    /**
+     * Membuka modal tambah kamar baru dan mereset form ke nilai default.
+     */
     const handleOpenAddModal = () => {
         setAddForm({
             nomor_kamar: '',
             tipe_kamar: 'Standard',
             harga_per_bulan: '',
         });
+        setErrors({});
         setIsAddModalOpen(true);
     };
 
+    /**
+     * Membuka modal edit kamar dan mengisi form dengan data kamar yang dipilih.
+     * 
+     * @param {Object} room - Objek data kamar yang akan diedit.
+     */
     const handleOpenEditModal = (room) => {
         setEditingRoom(room);
         setEditForm({
@@ -54,10 +85,19 @@ const Kamar = () => {
             tipe_kamar: room.tipe_kamar,
             harga_per_bulan: room.harga_per_bulan.toString(),
         });
+        setErrors({});
         setIsEditModalOpen(true);
     };
 
+    /**
+     * Menangani proses penambahan kamar baru ke dalam sistem.
+     * Mengonversi harga ke tipe integer dan memanggil API addRoom.
+     * 
+     * @async
+     */
     const handleAddRoom = async () => {
+        if (!validateForm(addForm)) return;
+
         const data = {
             ...addForm,
             harga_per_bulan: parseInt(addForm.harga_per_bulan),
@@ -71,7 +111,15 @@ const Kamar = () => {
         setIsAddModalOpen(false);
     };
 
+    /**
+     * Menangani proses pembaruan data kamar.
+     * Memanggil API updateRoom dengan ID kamar yang sedang diedit.
+     * 
+     * @async
+     */
     const handleEditRoom = async () => {
+        if (!validateForm(editForm)) return;
+
         const data = {
             ...editForm,
             harga_per_bulan: parseInt(editForm.harga_per_bulan),
@@ -85,6 +133,14 @@ const Kamar = () => {
         setIsEditModalOpen(false);
     };
 
+    /**
+     * Menangani proses penghapusan kamar dari sistem.
+     * Menampilkan konfirmasi terlebih dahulu sebelum memanggil API deleteRoom.
+     * 
+     * @async
+     * @param {number|string} id - ID kamar yang akan dihapus.
+     * @param {string} roomNumber - Nomor kamar untuk ditampilkan dalam konfirmasi.
+     */
     const handleDeleteRoom = async (id, roomNumber) => {
         if (window.confirm(`Apakah Anda yakin ingin menghapus ${roomNumber}?`)) {
             await deleteRoom(id);
@@ -197,8 +253,9 @@ const Kamar = () => {
                                 placeholder="Contoh: Kamar 01"
                                 value={addForm.nomor_kamar}
                                 onChange={(e) => setAddForm({ ...addForm, nomor_kamar: e.target.value })}
-                                className="mt-2"
+                                className={`mt-2 ${errors.nomor_kamar ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                             />
+                            {errors.nomor_kamar && <p className="text-red-500 text-xs mt-1">{errors.nomor_kamar}</p>}
                         </div>
 
                         <div>
@@ -223,8 +280,9 @@ const Kamar = () => {
                                 placeholder="800000"
                                 value={addForm.harga_per_bulan}
                                 onChange={(e) => setAddForm({ ...addForm, harga_per_bulan: e.target.value })}
-                                className="mt-2"
+                                className={`mt-2 ${errors.harga_per_bulan ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                             />
+                            {errors.harga_per_bulan && <p className="text-red-500 text-xs mt-1">{errors.harga_per_bulan}</p>}
                         </div>
                     </div>
 
@@ -254,8 +312,9 @@ const Kamar = () => {
                                 placeholder="Contoh: Kamar 01"
                                 value={editForm.nomor_kamar}
                                 onChange={(e) => setEditForm({ ...editForm, nomor_kamar: e.target.value })}
-                                className="mt-2"
+                                className={`mt-2 ${errors.nomor_kamar ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                             />
+                            {errors.nomor_kamar && <p className="text-red-500 text-xs mt-1">{errors.nomor_kamar}</p>}
                         </div>
 
                         <div>
@@ -280,8 +339,9 @@ const Kamar = () => {
                                 placeholder="800000"
                                 value={editForm.harga_per_bulan}
                                 onChange={(e) => setEditForm({ ...editForm, harga_per_bulan: e.target.value })}
-                                className="mt-2"
+                                className={`mt-2 ${errors.harga_per_bulan ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                             />
+                            {errors.harga_per_bulan && <p className="text-red-500 text-xs mt-1">{errors.harga_per_bulan}</p>}
                         </div>
                     </div>
 

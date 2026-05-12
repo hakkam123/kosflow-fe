@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import {
     DoorOpen,
     Users,
@@ -9,94 +9,14 @@ import {
     UserCheck,
     AlertCircle,
 } from 'lucide-react';
+import { useRoomStore } from '../../context/roomStore';
+import { useTenantStore } from '../../context/tenantStore';
+import { useBillingStore } from '../../context/billingStore';
+import { formatRupiah } from '../../utils/formatRupiah';
 
-// Sample data matching the image
-const statsData = [
-    {
-        id: 1,
-        title: 'Total Kamar',
-        value: '1',
-        subtitle: 'Ofhuni',
-        icon: DoorOpen,
-        iconBg: 'bg-[#059669]/10',
-        iconColor: 'text-[#059669]',
-    },
-    {
-        id: 2,
-        title: 'Penghuni',
-        value: '1',
-        subtitle: 'Aktif',
-        icon: Users,
-        iconBg: 'bg-blue-100',
-        iconColor: 'text-blue-600',
-    },
-    {
-        id: 3,
-        title: 'Menunggu',
-        value: 'Rp 800.000',
-        subtitle: 'Tagihan',
-        icon: Wallet,
-        iconBg: 'bg-orange-100',
-        iconColor: 'text-orange-600',
-    },
-    {
-        id: 4,
-        title: 'Terlambat',
-        value: 'Rp 800.000',
-        subtitle: 'Belum dibayar',
-        icon: AlertTriangle,
-        iconBg: 'bg-red-100',
-        iconColor: 'text-red-600',
-    },
-];
-
-const overduePayments = [
-    {
-        id: 1,
-        name: 'Muhammad Bilal Abdurrhman',
-        room: 'Kamar 01',
-        amount: 'Rp 800.000',
-        status: 'Terlambat 1 hari',
-        statusColor: 'bg-orange-100 text-orange-700',
-    },
-    {
-        id: 2,
-        name: 'Muhammad Zaki Alghifari',
-        room: 'Kamar 02',
-        amount: 'Rp 800.000',
-        status: 'Har Ini',
-        statusColor: 'bg-gray-100 text-gray-700',
-    },
-];
-
-const recentActivities = [
-    {
-        id: 1,
-        icon: CheckCircle2,
-        iconBg: 'bg-[#059669]/10',
-        iconColor: 'text-[#059669]',
-        title: 'Pembayaran diterima dari Muhammad Bilal Abdurrhman sebesar Rp 800.000',
-        time: '2 menit yang lalu',
-    },
-    {
-        id: 2,
-        icon: UserCheck,
-        iconBg: 'bg-blue-100',
-        iconColor: 'text-blue-600',
-        title: 'Penghuni baru terdaftar di kamar 201: Wisnu',
-        time: '1 jam yang lalu',
-    },
-    {
-        id: 3,
-        icon: AlertCircle,
-        iconBg: 'bg-red-100',
-        iconColor: 'text-red-600',
-        title: 'Pembayaran Terlambat Kamar 101: Muhammad Bilal Abdurrhman',
-        time: '2 jam yang lalu',
-    },
-];
-
-// Stats Card Component
+/**
+ * Komponen StatsCard - Menampilkan kartu statistik dengan ikon, nilai, dan judul.
+ */
 const StatsCard = ({ stat }) => {
     const Icon = stat.icon;
     return (
@@ -115,27 +35,31 @@ const StatsCard = ({ stat }) => {
     );
 };
 
-// Overdue Payment Item Component
+/**
+ * Komponen OverduePaymentItem - Menampilkan baris item untuk pembayaran yang terlambat.
+ */
 const OverduePaymentItem = ({ payment }) => {
     return (
         <div className="flex items-center justify-between py-4 border-b border-gray-100 last:border-b-0">
             <div className="flex-1">
-                <p className="font-medium text-gray-900">{payment.name}</p>
-                <p className="text-sm text-gray-500">{payment.room}</p>
+                <p className="font-medium text-gray-900">{payment.penghuni?.nama_lengkap || 'Penghuni'}</p>
+                <p className="text-sm text-gray-500">Kamar {payment.penghuni?.kamar_id || '-'}</p>
             </div>
             <div className="flex items-center gap-3">
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${payment.statusColor}`}>
-                    {payment.status}
+                <span className={`px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700`}>
+                    Terlambat
                 </span>
                 <p className="font-semibold text-gray-900 min-w-[100px] text-right">
-                    {payment.amount}
+                    {formatRupiah(payment.total_tagihan || payment.jumlah_tagihan)}
                 </p>
             </div>
         </div>
     );
 };
 
-// Activity Item Component
+/**
+ * Komponen ActivityItem - Menampilkan baris item untuk aktivitas terbaru di sistem.
+ */
 const ActivityItem = ({ activity }) => {
     const Icon = activity.icon;
     return (
@@ -151,7 +75,95 @@ const ActivityItem = ({ activity }) => {
     );
 };
 
+/**
+ * Komponen Utama Dashboard - Menampilkan ringkasan statistik kos (pendapatan, ketersediaan kamar, tagihan jatuh tempo, aktivitas terbaru).
+ * 
+ * @returns {JSX.Element} Halaman Dashboard Utama.
+ */
 const Dashboard = () => {
+    const { rooms, fetchRooms } = useRoomStore();
+    const { tenants, fetchTenants } = useTenantStore();
+    const { billings, fetchBillings } = useBillingStore();
+
+    useEffect(() => {
+        fetchRooms();
+        fetchTenants();
+        fetchBillings();
+    }, [fetchRooms, fetchTenants, fetchBillings]);
+
+    // Derived Statistics
+    const stats = useMemo(() => {
+        const pendingBillings = billings.filter(b => 
+            b.status_tagihan === 'Belum Bayar' || b.status_pembayaran === 'Belum Lunas'
+        );
+        const overdueBillings = billings.filter(b => 
+            b.status_tagihan === 'Terlambat' || b.status_pembayaran === 'Overdue'
+        );
+        
+        const totalPendingAmount = pendingBillings.reduce((sum, b) => sum + (b.total_tagihan || b.jumlah_tagihan), 0);
+        const totalOverdueAmount = overdueBillings.reduce((sum, b) => sum + (b.total_tagihan || b.jumlah_tagihan), 0);
+
+        return [
+            {
+                id: 1,
+                title: 'Total Kamar',
+                value: rooms.length,
+                subtitle: 'Kamar Terdaftar',
+                icon: DoorOpen,
+                iconBg: 'bg-[#059669]/10',
+                iconColor: 'text-[#059669]',
+            },
+            {
+                id: 2,
+                title: 'Penghuni',
+                value: tenants.length,
+                subtitle: 'Aktif',
+                icon: Users,
+                iconBg: 'bg-blue-100',
+                iconColor: 'text-blue-600',
+            },
+            {
+                id: 3,
+                title: 'Menunggu',
+                value: formatRupiah(totalPendingAmount),
+                subtitle: 'Tagihan Berjalan',
+                icon: Wallet,
+                iconBg: 'bg-orange-100',
+                iconColor: 'text-orange-600',
+            },
+            {
+                id: 4,
+                title: 'Terlambat',
+                value: formatRupiah(totalOverdueAmount),
+                subtitle: 'Belum dibayar',
+                icon: AlertTriangle,
+                iconBg: 'bg-red-100',
+                iconColor: 'text-red-600',
+            },
+        ];
+    }, [rooms, tenants, billings]);
+
+    const overdueList = useMemo(() => {
+        return billings.filter(b => b.status_tagihan === 'Terlambat' || b.status_pembayaran === 'Overdue').slice(0, 5);
+    }, [billings]);
+
+    // Mock activities for now as there's no activity service yet
+    const recentActivities = [
+        {
+            id: 1,
+            icon: CheckCircle2,
+            iconBg: 'bg-[#059669]/10',
+            iconColor: 'text-[#059669]',
+            title: 'Sistem siap digunakan',
+            time: 'Baru saja',
+        },
+    ];
+
+    const occupiedCount = rooms.filter(r => r.status_kamar === 'Terisi').length;
+    const incomeThisMonth = billings
+        .filter(b => (b.status_tagihan === 'Lunas' || b.status_pembayaran === 'Terbayar'))
+        .reduce((sum, b) => sum + (b.total_tagihan || b.jumlah_tagihan), 0);
+
     return (
         <div className="p-6 bg-gray-50 min-h-screen">
             {/* Header */}
@@ -162,7 +174,7 @@ const Dashboard = () => {
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                {statsData.map((stat) => (
+                {stats.map((stat) => (
                     <StatsCard key={stat.id} stat={stat} />
                 ))}
             </div>
@@ -175,9 +187,9 @@ const Dashboard = () => {
                         <div className="w-10 h-10 rounded-lg bg-[#059669]/10 flex items-center justify-center">
                             <Wallet className="h-5 w-5 text-[#059669]" />
                         </div>
-                        <h3 className="font-semibold text-gray-900">Pendapatan Bulan ini</h3>
+                        <h3 className="font-semibold text-gray-900">Total Pendapatan Terbayar</h3>
                     </div>
-                    <p className="text-3xl font-bold text-[#059669]">Rp 800.000</p>
+                    <p className="text-3xl font-bold text-[#059669]">{formatRupiah(incomeThisMonth)}</p>
                 </div>
 
                 {/* Ketersediaan Kamar */}
@@ -189,7 +201,7 @@ const Dashboard = () => {
                         <h3 className="font-semibold text-gray-900">Ketersediaan Kamar</h3>
                     </div>
                     <p className="text-3xl font-bold text-blue-600">
-                        0 <span className="text-gray-400 text-lg">dari 0 kamar</span>
+                        {occupiedCount} <span className="text-gray-400 text-lg">dari {rooms.length} kamar terisi</span>
                     </p>
                 </div>
             </div>
@@ -203,14 +215,18 @@ const Dashboard = () => {
                             <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
                                 <Clock className="h-5 w-5 text-orange-600" />
                             </div>
-                            <h3 className="font-semibold text-gray-900">Jatuh Tempo Segera</h3>
+                            <h3 className="font-semibold text-gray-900">Jatuh Tempo / Terlambat</h3>
                         </div>
                     </div>
                     <div className="p-6">
                         <div className="divide-y divide-gray-100">
-                            {overduePayments.map((payment) => (
-                                <OverduePaymentItem key={payment.id} payment={payment} />
-                            ))}
+                            {overdueList.length > 0 ? (
+                                overdueList.map((payment) => (
+                                    <OverduePaymentItem key={payment.id} payment={payment} />
+                                ))
+                            ) : (
+                                <p className="text-center text-gray-500 py-4">Tidak ada tagihan terlambat</p>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -222,7 +238,7 @@ const Dashboard = () => {
                             <div className="w-10 h-10 rounded-lg bg-[#059669]/10 flex items-center justify-center">
                                 <CheckCircle2 className="h-5 w-5 text-[#059669]" />
                             </div>
-                            <h3 className="font-semibold text-gray-900">Aktivitas Terbaru</h3>
+                            <h3 className="font-semibold text-gray-900">Status Sistem</h3>
                         </div>
                     </div>
                     <div className="p-6">

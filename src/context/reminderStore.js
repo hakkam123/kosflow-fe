@@ -12,7 +12,7 @@ export const useReminderStore = create((set, get) => ({
             const response = await reminderService.getAll();
             set({ reminders: response.data || [], isLoading: false });
         } catch (error) {
-            set({ error: error.response?.data?.message || error.message, isLoading: false });
+            set({ reminders: [], error: error.response?.data?.message || error.message, isLoading: false });
         }
     },
 

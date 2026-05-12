@@ -5,6 +5,12 @@ import faceService from '../../services/faceService';
 
 const UPLOADS_URL = faceService.getUploadsUrl();
 
+/**
+ * Komponen LogAkses - Halaman yang menampilkan log histori akses dari deteksi wajah.
+ * Menampilkan jumlah total akses hari ini, beserta jumlah yang dikenali dan tidak dikenali.
+ * 
+ * @returns {JSX.Element} Halaman Log Akses.
+ */
 const LogAkses = () => {
   const { logs, fetchLogs, isLoading } = useFaceStore();
   const [filterStatus, setFilterStatus] = useState('');
@@ -24,6 +30,12 @@ const LogAkses = () => {
     );
   });
 
+  /**
+   * Memformat string tanggal menjadi format lokal Indonesia.
+   * 
+   * @param {string} dateStr - String tanggal yang akan diformat.
+   * @returns {string} String tanggal yang sudah diformat.
+   */
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
     const d = new Date(dateStr);

@@ -13,7 +13,7 @@ export const useBillingStore = create((set, get) => ({
             const response = await billingService.getAll();
             set({ billings: response.data || [], isLoading: false });
         } catch (error) {
-            set({ error: error.response?.data?.message || error.message, isLoading: false });
+            set({ billings: [], error: error.response?.data?.message || error.message, isLoading: false });
         }
     },
 

@@ -3,11 +3,12 @@ import { API_BASE_URL } from "../config/constants";
 
 // Create axios instance with default config (with auth)
 const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-  timeout: 10000,
+    baseURL: API_BASE_URL,
+    headers: {
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
+    },
+    timeout: 10000,
 });
 
 // Create axios instance for public endpoints (without auth redirect)

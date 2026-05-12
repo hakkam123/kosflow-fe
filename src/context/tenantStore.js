@@ -15,7 +15,7 @@ export const useTenantStore = create((set, get) => ({
             set({ tenants: response.data, isLoading: false });
         } catch (error) {
             const message = error.response?.data?.message || 'Gagal memuat data penghuni';
-            set({ error: message, isLoading: false });
+            set({ tenants: [], error: message, isLoading: false });
         }
     },
 
